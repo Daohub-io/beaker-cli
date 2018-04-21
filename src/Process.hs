@@ -177,7 +177,7 @@ keccak256 bs = hash bs
 
 data Capabilities = Capabilities
     { caps_storageRange :: (Natural, Natural)
-    }
+    } deriving Show
 
 insertProtections :: Capabilities -> [CountedOpCode] -> [CountedOpCode]
 insertProtections caps codes = codes >>= (\ccode -> case ccode of

@@ -28,6 +28,7 @@ library
       , cryptonite
       , memory
       , QuickCheck
+      , optparse-applicative
   exposed-modules:
       OpCode.Exporter,
       OpCode.Parser,
