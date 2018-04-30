@@ -3,6 +3,7 @@ packages:
 - .
 allow-newer: true
 extra-deps:
+- tagged-0.8.5
 - equational-reasoning-0.5.1.0
 - ghc-typelits-presburger-0.2.0.0
 - sized-0.3.0.0
