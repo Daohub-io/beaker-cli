@@ -22,6 +22,8 @@ jobs:
           command: |
             sudo apt-get -y install gcc
             sudo apt-get -y install libgmp3-dev
+            stack install alex --no-terminal
+            stack install cabal-install --no-terminal
             stack setup --no-terminal
             curl -sL https://deb.nodesource.com/setup_9.x | sudo bash -
             sudo apt-get -y install nodejs
