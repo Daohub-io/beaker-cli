@@ -74,7 +74,7 @@ preprocessorTests = TestLabel "Preprocessor" $ TestList $
     [ TestLabel "Storage Protection" $ TestList $
         [ TestLabel "Should Leave Code w/o Jumps or JumpDests Unchanged" $ TestCase $ do
             let code = [STOP, STOP, STOP]
-            assertEqual "Code should remain unchanged" code (transform defaultCaps code)
+            assertEqual "Code should remain unchanged" code (transformDeployed defaultCaps code)
         , TestLabel "Should Add a table for a single jump (no stores)" $ TestCase $ do
             let code =
                     [ PUSH1 (pack [0x4])
@@ -95,8 +95,8 @@ preprocessorTests = TestLabel "Preprocessor" $ TestList $
                 defaultCaps = Capabilities
                     { caps_storageRange  = (0x0100000000000000000000000000000000000000000000000000000000000000,0x0200000000000000000000000000000000000000000000000000000000000000)
                     }
-                tableWithProtectedStores = replaceCodeCopy $ replaceVars $ appendJumpTable $ replaceJumps $ insertProtections defaultCaps $ countCodes code
-                tableWithoutProtectedStores = replaceCodeCopy $ replaceVars $ appendJumpTable $ replaceJumps $ countCodes code
+                tableWithProtectedStores = replaceVars $ appendJumpTable $ replaceJumps $ insertProtections defaultCaps $ countCodes code
+                tableWithoutProtectedStores = replaceVars $ appendJumpTable $ replaceJumps $ countCodes code
             assertEqual "The added jump table should be the same whether storage protection is run or not" tableWithoutProtectedStores tableWithProtectedStores
         , TestLabel "Should add a table for a single jump (no stores)" $ TestCase $ do
             let code =
@@ -105,7 +105,7 @@ preprocessorTests = TestLabel "Preprocessor" $ TestList $
                     , STOP
                     , JUMPDEST
                     ]
-            case extractJumpTable $ transform defaultCaps code of
+            case extractJumpTable $ transformDeployed defaultCaps code of
                 Just entries -> do
                     assertEqual "The jump table should have a single entry" 1 (length entries)
                     let [(original, remapping)] = entries
@@ -117,13 +117,14 @@ preprocessorTests = TestLabel "Preprocessor" $ TestList $
                     , PUSH1 (pack [0x4])
                     , SSTORE
                     ]
-                transformed = transform defaultCaps code
+                transformed = transformDeployed defaultCaps code
             case extractJumpTable transformed of
                 Just entries -> assertFailure "A jump table should not be present"
                 Nothing -> pure ()
             case getRequiredCapabilities transformed of
-                Any -> assertFailure "Require capability is Any, but should be restricted"
-                Ranges rs -> assertEqual "Storage capability range should be as specified" (S.singleton $ caps_storageRange defaultCaps) (rs)
+                Left e -> assertFailure ("Capability determination failed: " ++ show e)
+                Right Any -> assertFailure "Require capability is Any, but should be restricted"
+                Right (Ranges rs) -> assertEqual "Storage capability range should be as specified" (S.singleton $ caps_storageRange defaultCaps) (rs)
         , TestLabel "Should add storage protection code (store and jump)" $ TestCase $ do
             let code =
                     [ PUSH1 (pack [0x4])
@@ -136,7 +137,7 @@ preprocessorTests = TestLabel "Preprocessor" $ TestList $
                     , PUSH1 (pack [0x4])
                     , POP
                     ]
-                transformed = transform defaultCaps code
+                transformed = transformDeployed defaultCaps code
             case extractJumpTable transformed of
                 Just entries -> do
                     assertEqual "The jump table should have a single entry" 1 (length entries)
@@ -144,8 +145,9 @@ preprocessorTests = TestLabel "Preprocessor" $ TestList $
                     assertEqual "The single jump table entry should be for 0x9" 0x9 original
                 Nothing -> assertFailure "A jump table should be present"
             case getRequiredCapabilities transformed of
-                Any -> assertFailure "Require capability is Any, but should be restricted"
-                Ranges rs -> assertEqual "Storage capability range should be as specified" (S.singleton $ caps_storageRange defaultCaps) (rs)
+                Left e -> assertFailure ("Capability determination failed: " ++ show e)
+                Right Any -> assertFailure "Require capability is Any, but should be restricted"
+                Right (Ranges rs) -> assertEqual "Storage capability range should be as specified" (S.singleton $ caps_storageRange defaultCaps) (rs)
         , TestLabel "\"Storer\"" $ TestCase $ do
             -- Read in the test Solidity source file. This file contains a
             -- Solidity contract with a single unprotected SSTORE call.
@@ -157,9 +159,15 @@ preprocessorTests = TestLabel "Preprocessor" $ TestList $
                 bsDecodedRunTime = let (bytes, remainder) = B16.decode $ encodeUtf8 bsEncodedRunTime
                     in if remainder == B.empty then bytes else error (show remainder)
             code <- parseGoodExample bsDecodedFull
-            assertBool "Calls with unprotected SSTORE should not pass store checker" (not $ checkStores code)
+            let checkPassUntransformed = case (checkStores code) of
+                    Left e -> error $ show e
+                    Right x -> x
+            assertBool "Calls with unprotected SSTORE should not pass store checker" (not checkPassUntransformed)
             -- after transformation it should pass store checker
-            assertBool "After transformation should pass store checker" (checkStores $ transform defaultCaps code)
+            let checkPassTransformed = case (checkStores $ transform defaultCaps code) of
+                    Left e -> error $ show e
+                    Right x -> x
+            assertBool "After transformation should pass store checker" checkPassTransformed
         , TestLabel "\"StorerWithAdd\"" $ TestCase $ do
             -- Read in the test Solidity source file. This file contains a
             -- Solidity contract with a single unprotected SSTORE call.
@@ -171,9 +179,19 @@ preprocessorTests = TestLabel "Preprocessor" $ TestList $
                 bsDecodedRunTime = let (bytes, remainder) = B16.decode $ encodeUtf8 bsEncodedRunTime
                     in if remainder == B.empty then bytes else error (show remainder)
             code <- parseGoodExample bsDecodedFull
-            assertBool "Calls with unprotected SSTORE should not pass store checker" (not $ checkStores code)
+            let checkPassUntransformed = case (checkStores code) of
+                    Left e -> error $ show e
+                    Right x -> x
+            assertBool
+                "Calls with unprotected SSTORE should not pass store checker"
+                (not checkPassUntransformed)
             -- after transformation it should pass store checker
-            assertBool "After transformation should pass store checker" (checkStores $ transform defaultCaps code)
+            let checkPassTransformed = case (checkStores $ transform defaultCaps code) of
+                    Left e -> error $ show e
+                    Right x -> x
+            assertBool
+                "After transformation should pass store checker"
+                checkPassTransformed
         , TestLabel "\"StorerWithAdd\" on chain" $ TestCase $ do
             -- Read in the test Solidity source file. This file contains a
             -- Solidity contract with a single unprotected SSTORE call.
@@ -239,6 +257,20 @@ preprocessorTests = TestLabel "Preprocessor" $ TestList $
             (Right code) <- runWeb3 $ getCode newContractAddress Latest
             actualRunCode <- parseGoodExample $ fst $ B16.decode $ B.drop 2 $ encodeUtf8 code
             pure ()
+        ]
+    , TestLabel "Init Presence" $ TestList
+        [ TestLabel "\"Ballot\"" $ TestCase $ do
+            -- #Deployment
+            -- Take the contract from the file and deploy it, returning the address.
+            r <- Control.Exception.try $ deployFromFile (transform defaultCaps) "test/Models/Ballot.sol" :: IO (Either SomeException Address.Address)
+            case r of
+                Left _ -> pure ()
+                Right _ -> assertFailure "Contract transformation should have failed due to unrecognised init"
+        , TestLabel "\"BallotNoConstructor\"" $ TestCase $ do
+            -- #Deployment
+            -- Take the contract from the file and deploy it, returning the address.
+            newContractAddress <- deployFromFile (transform defaultCaps) "test/Models/BallotNoConstructor.sol"
+            print newContractAddress
         ]
     ]
 

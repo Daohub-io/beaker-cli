@@ -9,6 +9,6 @@ extra-deps:
 - type-natural-0.8.0.0
 - ethereum-rlp-0.1.0
 - optparse-applicative-0.14.2.0
-- git: https://github.com/Daolab/hs-web3.git
+- git: git@github.com:Daolab/hs-web3.git
   commit: 85c555509d9a68ccda78ad67fbca18cd89961cd8
 resolver: lts-11.1

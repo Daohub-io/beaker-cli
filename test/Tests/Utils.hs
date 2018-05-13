@@ -53,6 +53,9 @@ import System.FilePath
 import System.Process
 import System.IO.Temp
 
+nullRes :: Text
+nullRes = "0x0"
+
 runWeb3 :: Web3 a -> IO (Either Web3Error a)
 runWeb3 = runWeb3' (HttpProvider "http://localhost:8545")
 
@@ -98,7 +101,7 @@ deployContract sender bsEncoded =  do
         let details = Call {
                 callFrom = Just sender,
                 callTo = Nothing,
-                callGas = Just 900000,
+                callGas = Just 3000000,
                 callGasPrice = Nothing,
                 callValue = Nothing,
                 callData = Just (T.pack $ C8.unpack $ "0x" `B.append` bsEncoded)
@@ -114,7 +117,7 @@ deployContract' sender bsEncoded =do
     let details = Call {
             callFrom = Just sender,
             callTo = Nothing,
-            callGas = Just 900000,
+            callGas = Just 3000000,
             callGasPrice = Nothing,
             callValue = Nothing,
             callData = Just (T.pack $ C8.unpack $ "0x" `B.append` bsEncoded)
