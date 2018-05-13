@@ -25,10 +25,10 @@ capParser = Capabilities
 
 cliParser :: Parser Compile
 cliParser = Compile
-  <$> strOption (
+  <$> strArgument (
     metavar "INPUT" <> help "input abi file"
   )
-  <*> strOption (
+  <*> strArgument (
     metavar "OUTPUT"
     <> value "output.abi"
     <> help "output abi file"
@@ -48,7 +48,7 @@ process (Compile input output capabilities) = do
 
 parseAndTransform :: Maybe Capabilities -> String -> String
 parseAndTransform capM input = case (capM, A.parse (parseOpCodes <* A.endOfInput) (B.pack input)) of
-  (_, A.Fail _ _ _) -> "" --TODO: error handling
-  (Just cap, A.Done _ ocs) -> toString (transform cap ocs) 
+  (Just cap, A.Done _ ocs) -> toString (transform cap ocs)
   (_, A.Done _ ocs) -> toString ocs
+  (_, _) -> "" --TODO: error handling
   where toString xs = B.unpack $ B.intercalate B.empty (map toByteString xs)
