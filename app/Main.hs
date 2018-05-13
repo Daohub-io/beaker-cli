@@ -42,13 +42,16 @@ main = do
       where opts = info (cliParser <**> helper) fullDesc
 
 process :: Compile -> IO ()
-process (Compile input output capabilities) = do
-  contents <- readFile input
-  writeFile output (parseAndTransform capabilities contents)
+process (Compile inputFile outputFile capabilities) = do
+  contents <- B.readFile inputFile
+  let result = parseAndTransform capabilities contents
+  case result of
+    Left err -> putStrLn err
+    Right output -> B.writeFile outputFile output
 
-parseAndTransform :: Maybe Capabilities -> String -> String
-parseAndTransform capM input = case (capM, A.parseOnly (parseOpCodes <* A.endOfInput) (B.pack input)) of
-  (Just cap, Right ocs) -> toString (transform cap ocs)
-  (_, Right ocs) -> toString ocs
-  (_, Left err) -> "" --TODO: error handling
-  where toString xs = B.unpack $ B.intercalate B.empty (map toByteString xs)
+parseAndTransform :: Maybe Capabilities -> B.ByteString -> Either String B.ByteString
+parseAndTransform capM input = case (capM, A.parseOnly (parseOpCodes <* A.endOfInput) input) of
+  (Just cap, Right ocs) -> Right . toString $ transform cap ocs
+  (_, Right ocs) -> Right . toString $ ocs
+  (_, Left err) -> Left err
+  where toString xs = B.intercalate B.empty (map toByteString xs)
