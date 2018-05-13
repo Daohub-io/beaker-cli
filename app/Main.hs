@@ -47,8 +47,8 @@ process (Compile input output capabilities) = do
   writeFile output (parseAndTransform capabilities contents)
 
 parseAndTransform :: Maybe Capabilities -> String -> String
-parseAndTransform capM input = case (capM, A.parse (parseOpCodes <* A.endOfInput) (B.pack input)) of
-  (Just cap, A.Done _ ocs) -> toString (transform cap ocs)
-  (_, A.Done _ ocs) -> toString ocs
-  (_, _) -> "" --TODO: error handling
+parseAndTransform capM input = case (capM, A.parseOnly (parseOpCodes <* A.endOfInput) (B.pack input)) of
+  (Just cap, Right ocs) -> toString (transform cap ocs)
+  (_, Right ocs) -> toString ocs
+  (_, Left err) -> "" --TODO: error handling
   where toString xs = B.unpack $ B.intercalate B.empty (map toByteString xs)
