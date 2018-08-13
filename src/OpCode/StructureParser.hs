@@ -15,10 +15,10 @@ import OpCode.Utils
 
 
 satisfy :: (Stream s m OpCode) => (OpCode -> Bool) -> ParsecT s u m OpCode
-satisfy f           = tokenPrim (\c -> show [c])
-                                -- (\pos c _cs -> updatePosChar pos c)
-                                (\pos c _cs -> pos)
-                                (\c -> if f c then Just c else Nothing)
+satisfy f = tokenPrim (\c -> show [c])
+                -- (\pos c _cs -> updatePosChar pos c)
+                (\pos c _cs -> pos)
+                (\c -> if f c then Just c else Nothing)
 
 opCode :: (Stream s m OpCode) => OpCode -> ParsecT s u m OpCode
 opCode opc = satisfy ((==) opc)
@@ -32,20 +32,24 @@ pushVal = tokenPrim (\c -> show [c])
     (\pos c _cs -> pos)
     (\c -> if isPush c then Just (getPushVal c) else Nothing)
 
-
+type ErrorAddress = Natural
 data StructuredCode
     = ProtectedStoreCall (Natural, Natural)
     | UnprotectedStoreCall
+    | SystemCall ErrorAddress
     | OtherOpCode OpCode
     deriving (Show, Eq)
 
 fullStructuredParse ::[OpCode] -> Either ParseError [StructuredCode]
 fullStructuredParse code = parse (fullStructureParser <* eof) "fullStructuredParse" code
 
+-- |Parse a contract into structured blocks.
 fullStructureParser :: (Stream s m OpCode) => ParsecT s u m [StructuredCode]
 fullStructureParser = many (choice
     [ ProtectedStoreCall <$> (try parseLoggedAndProtectedSSTORE)
     , pure UnprotectedStoreCall <* (opCode SSTORE)
+    -- , StaticSystemCall <$> parseStaticSystemCall
+    , parseDynamicSystemCall
     , OtherOpCode <$> anyOpCode
     ])
 
@@ -54,6 +58,31 @@ parseLoggedAndProtectedSSTORE = do
     range <- parseProtectStoreCallLeaveKey
     parseLogStoreCall
     pure range
+
+-- parseStaticSystemCall :: (Stream s m Opcode) => ParsecT s u m StaticSystemCall
+-- parseStaticSystemCall = do
+--     opcode 1
+--     opcode 2
+--     opcode 3
+--     opCode CALLER
+--     opCode DUP
+--     opCode OpCode.Type.EQ
+--     opCode NOT
+--     err_addr <- pushVal
+--     opCode JUMPI
+--     opcode DELEGATECALL
+--     pure $ SystemCall err_addr
+
+parseDynamicSystemCall :: (Stream s m OpCode) => ParsecT s u m StructuredCode
+parseDynamicSystemCall = do
+    opCode CALLER         -- CALLER         // Get Caller
+    opCode DUP1           -- DUP            // Duplicate to Stack
+    opCode OpCode.Type.EQ -- EQ             // Check if Caller is Kernel Instance
+    opCode NOT            -- NOT            // If not..
+    err_addr <- pushVal   -- PUSH erraddr   // Throw “Wrong Address” error
+    opCode JUMPI          -- JUMPI          // Otherwise..
+    opCode DELEGATECALL   -- DELEGATECALL   // Delegate Call to Caller
+    pure $ SystemCall err_addr
 
 parseProtectStoreCallLeaveKey :: (Stream s m OpCode) => ParsecT s u m (Natural, Natural)
 parseProtectStoreCallLeaveKey = do

@@ -97,3 +97,43 @@ test-suite evm-mod-test
       Tests.Analyse,
       Tests.Utils
   default-language: Haskell2010
+
+test-suite os-tests
+  type: exitcode-stdio-1.0
+  main-is: OSMain.hs
+  hs-source-dirs:
+      ostest, test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , attoparsec
+    , evm-mod
+    , base16-bytestring
+    , bytestring
+    , containers
+    , directory
+    , filepath
+    , parsec
+    , process
+    , temporary
+    , text
+    , HUnit
+    , QuickCheck
+    , test-framework
+    , test-framework-hunit
+    , test-framework-quickcheck2
+    , web3
+  other-modules:
+      Paths_evm_mod,
+      CompileSolidity,
+      Models.HandWritten,
+      Tests.HandleOpCodes,
+      Tests.Transform,
+      Tests.Transform.AdderOnChainProtected,
+      Tests.Transform.AdderOnChainUnprotected,
+      Tests.Transform.StoreAndGetOnChainProtectedInBounds,
+      Tests.Transform.StoreAndGetOnChainProtectedOutOfBounds,
+      Tests.Transform.StoreAndGetOnChainUnprotectedInBounds,
+      Tests.Analyse,
+      Tests.Utils
+  default-language: Haskell2010
