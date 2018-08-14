@@ -15,6 +15,8 @@ import OpCode.Exporter
 import OpCode.StructureParser
 import OpCode.Type
 
+import Text.Printf
+
 runOpCodes :: ReadOpt -> FilePath -> IO ()
 runOpCodes readOpt inputPath = do
     -- Read the file in
@@ -25,7 +27,9 @@ runOpCodes readOpt inputPath = do
         opcodes = case parseOpCodesFromBS contents of
             Left e -> error e
             Right x -> x
-    mapM_ print opcodes
+    mapM_ printE $ zip (scanl (\offset opcode -> offset + (nBytes opcode)) 0 opcodes) opcodes
+    where
+        printE (offset, opcode) = printf "0x%x: %s\n" offset (show opcode)
 
 runStructures :: ReadOpt -> FilePath -> IO ()
 runStructures readOpt inputPath = do

@@ -57,9 +57,9 @@ fullStructuredParse path code = parse (fullStructureParser <* eof) path code
 fullStructureParser :: (Stream s m OpCode) => ParsecT s u m [StructuredCode]
 fullStructureParser = many (choice $ map try
     [ mkStructuredCode (ProtectedStoreCall <$> parseLoggedAndProtectedSSTORE)
-    -- , pure UnprotectedStoreCall <* (opCode SSTORE)
-    -- -- , StaticSystemCall <$> parseStaticSystemCall
-    -- , parseDynamicSystemCall
+    , mkStructuredCode (pure UnprotectedStoreCall <* (opCode SSTORE))
+    -- , StaticSystemCall <$> parseStaticSystemCall
+    , mkStructuredCode parseDynamicSystemCall
     , mkStructuredCode (OtherOpCode <$> anyOpCode)
     ])
 

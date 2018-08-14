@@ -30,8 +30,9 @@ type ErrorAddress = Natural
 
 -- |A structured set of @OpCode@s.
 data StructuredCode = StructuredCode
-    StructuredCodeInfo
-    StructuredCodeComponent
+    { sc_info :: StructuredCodeInfo
+    , sc_component :: StructuredCodeComponent
+    }
     deriving (Show, Eq)
 
 data StructuredCodeInfo = StructuredCodeInfo
