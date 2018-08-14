@@ -2,17 +2,9 @@ module OpCode.Type where
 
 import Prelude hiding (LT, EQ, GT)
 
-import Control.Applicative
 import Data.ByteString
 import Data.ByteString.Base16 as B16 (encode)
-import qualified Data.ByteString.Char8 as C8
-import Data.Attoparsec.ByteString as A
--- import Data.Attoparsec.Binary
-import Data.Char (isSpace)
-import Data.List as L
-import Debug.Trace
 
-import Data.Word
 import Control.Monad
 
 import Numeric.Natural
@@ -493,37 +485,69 @@ instance Arbitrary OpCode where
         , pure SELFDESTRUCT
         ]
 
+arbitraryPUSH1 :: Gen OpCode
 arbitraryPUSH1  = PUSH1  <$> (fmap pack $ replicateM 1 arbitrary)
+arbitraryPUSH2 :: Gen OpCode
 arbitraryPUSH2  = PUSH2  <$> (fmap pack $ replicateM  2 arbitrary)
+arbitraryPUSH3 :: Gen OpCode
 arbitraryPUSH3  = PUSH3  <$> (fmap pack $ replicateM  3 arbitrary)
+arbitraryPUSH4 :: Gen OpCode
 arbitraryPUSH4  = PUSH4  <$> (fmap pack $ replicateM  4 arbitrary)
+arbitraryPUSH5 :: Gen OpCode
 arbitraryPUSH5  = PUSH5  <$> (fmap pack $ replicateM  5 arbitrary)
+arbitraryPUSH6 :: Gen OpCode
 arbitraryPUSH6  = PUSH6  <$> (fmap pack $ replicateM  6 arbitrary)
+arbitraryPUSH7 :: Gen OpCode
 arbitraryPUSH7  = PUSH7  <$> (fmap pack $ replicateM  7 arbitrary)
+arbitraryPUSH8 :: Gen OpCode
 arbitraryPUSH8  = PUSH8  <$> (fmap pack $ replicateM  8 arbitrary)
+arbitraryPUSH9 :: Gen OpCode
 arbitraryPUSH9  = PUSH9  <$> (fmap pack $ replicateM  9 arbitrary)
+arbitraryPUSH10 :: Gen OpCode
 arbitraryPUSH10 = PUSH10 <$> (fmap pack $ replicateM 10 arbitrary)
+arbitraryPUSH11 :: Gen OpCode
 arbitraryPUSH11 = PUSH11 <$> (fmap pack $ replicateM 11 arbitrary)
+arbitraryPUSH12 :: Gen OpCode
 arbitraryPUSH12 = PUSH12 <$> (fmap pack $ replicateM 12 arbitrary)
+arbitraryPUSH13 :: Gen OpCode
 arbitraryPUSH13 = PUSH13 <$> (fmap pack $ replicateM 13 arbitrary)
+arbitraryPUSH14 :: Gen OpCode
 arbitraryPUSH14 = PUSH14 <$> (fmap pack $ replicateM 14 arbitrary)
+arbitraryPUSH15 :: Gen OpCode
 arbitraryPUSH15 = PUSH15 <$> (fmap pack $ replicateM 15 arbitrary)
+arbitraryPUSH16 :: Gen OpCode
 arbitraryPUSH16 = PUSH16 <$> (fmap pack $ replicateM 16 arbitrary)
+arbitraryPUSH17 :: Gen OpCode
 arbitraryPUSH17 = PUSH17 <$> (fmap pack $ replicateM 17 arbitrary)
+arbitraryPUSH18 :: Gen OpCode
 arbitraryPUSH18 = PUSH18 <$> (fmap pack $ replicateM 18 arbitrary)
+arbitraryPUSH19 :: Gen OpCode
 arbitraryPUSH19 = PUSH19 <$> (fmap pack $ replicateM 19 arbitrary)
+arbitraryPUSH20 :: Gen OpCode
 arbitraryPUSH20 = PUSH20 <$> (fmap pack $ replicateM 20 arbitrary)
+arbitraryPUSH21 :: Gen OpCode
 arbitraryPUSH21 = PUSH21 <$> (fmap pack $ replicateM 21 arbitrary)
+arbitraryPUSH22 :: Gen OpCode
 arbitraryPUSH22 = PUSH22 <$> (fmap pack $ replicateM 22 arbitrary)
+arbitraryPUSH23 :: Gen OpCode
 arbitraryPUSH23 = PUSH23 <$> (fmap pack $ replicateM 23 arbitrary)
+arbitraryPUSH24 :: Gen OpCode
 arbitraryPUSH24 = PUSH24 <$> (fmap pack $ replicateM 24 arbitrary)
+arbitraryPUSH25 :: Gen OpCode
 arbitraryPUSH25 = PUSH25 <$> (fmap pack $ replicateM 25 arbitrary)
+arbitraryPUSH26 :: Gen OpCode
 arbitraryPUSH26 = PUSH26 <$> (fmap pack $ replicateM 26 arbitrary)
+arbitraryPUSH27 :: Gen OpCode
 arbitraryPUSH27 = PUSH27 <$> (fmap pack $ replicateM 27 arbitrary)
+arbitraryPUSH28 :: Gen OpCode
 arbitraryPUSH28 = PUSH28 <$> (fmap pack $ replicateM 28 arbitrary)
+arbitraryPUSH29 :: Gen OpCode
 arbitraryPUSH29 = PUSH29 <$> (fmap pack $ replicateM 29 arbitrary)
+arbitraryPUSH30 :: Gen OpCode
 arbitraryPUSH30 = PUSH30 <$> (fmap pack $ replicateM 30 arbitrary)
+arbitraryPUSH31 :: Gen OpCode
 arbitraryPUSH31 = PUSH31 <$> (fmap pack $ replicateM 31 arbitrary)
+arbitraryPUSH32 :: Gen OpCode
 arbitraryPUSH32 = PUSH32 <$> (fmap pack $ replicateM 32 arbitrary)
 
 

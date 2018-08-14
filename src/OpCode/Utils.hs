@@ -5,12 +5,10 @@ import Crypto.Hash
 import qualified Data.ByteArray (convert)
 import Data.ByteString hiding (unfoldr, foldl')
 import qualified Data.ByteString as B
-import Data.Monoid
 import Data.Binary
 import Data.Binary.Put
 import Data.Binary.Get
 import Data.Bits
-import Data.Word
 import Numeric.Natural
 import Data.ByteString.Lazy (toStrict, fromStrict)
 
@@ -34,6 +32,7 @@ evm256ToInteger' = do
             bytes <- getBytes' []
             pure $! roll bytes
 
+getBytes' :: [Word8] -> Get [Word8]
 getBytes' cs = do
     empty <- isEmpty
     if empty
