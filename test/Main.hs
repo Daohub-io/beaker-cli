@@ -171,7 +171,7 @@ structureParserTests = TestList
                 , XOR
                 , REVERT
                 ]
-        let parseRes = fullStructuredParse testCombo
+        let parseRes = fullStructuredParse "(test)" testCombo
         assertEqual
             "Input should be parsed and return a single protected store with the correct store range"
             (Right [ProtectedStoreCall (ll,ul)])
@@ -186,7 +186,7 @@ structureParserTests = TestList
                 , REVERT
                 , SSTORE
                 ]
-        let parseRes = fullStructuredParse testCombo
+        let parseRes = fullStructuredParse "(test)" testCombo
         assertEqual
             "Input should be parsed and return a single protected store with the correct store range"
             (Right

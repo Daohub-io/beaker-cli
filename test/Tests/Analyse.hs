@@ -119,7 +119,7 @@ storeCheckerTests = TestLabel "Store Checker" $ TestList $
             code <- parseGoodExample bsDecoded
             let lowerLimit = 0x0100000000000000000000000000000000000000000000000000000000000000
                 upperLimit = 0x0200000000000000000000000000000000000000000000000000000000000000
-            let Right parsed =  fullStructuredParse code
+            let Right parsed =  fullStructuredParse "(test)" code
             assertEqual
                 "Calls with unprotected SSTORE should require Any writie cap"
                 (Right $ Any)
