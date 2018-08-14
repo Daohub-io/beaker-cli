@@ -33,6 +33,7 @@ jobs:
       - run:
           name: Build
           command: |
+            stack build Cabal --no-terminal
             stack build --no-terminal --test --no-run-tests
       - save_cache:
           key: deps3-{{ .Branch }}-
