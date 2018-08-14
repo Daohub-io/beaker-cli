@@ -26,7 +26,9 @@ findNonCompliances structures = reverse $ foldl' f [] structures
             Nothing -> acc
             Just nonComp -> nonComp:acc
 
--- |We use a whitelist, which is very verbose, but safer to maintain
+-- |This is the beaker compliance whitelist. A whitelist is very verbose, but
+-- safer to maintain. This function looks at a single element of structued code
+-- and returns a Nothing if it is compliant and a Just if it is not.
 compliance :: StructuredCode -> Maybe NonCompliance
 compliance (StructuredCode _ (SystemCall _)) = Nothing
 compliance (StructuredCode _ (OtherOpCode STOP)) = Nothing
