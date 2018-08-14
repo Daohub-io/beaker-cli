@@ -19,7 +19,7 @@ data StorageRange = Any | Ranges (S.Set (Natural, Natural)) deriving (Eq, Show)
 -- |Currently just gets address ranges
 getRequiredCapabilities :: [OpCode] -> Either ParseError StorageRange
 getRequiredCapabilities code = do
-    parsed <- fullStructuredParse code
+    parsed <- fullStructuredParse "(unknown)" code
     pure $ getRequiredCapabilities' (Ranges S.empty) parsed
 
 getRequiredCapabilities'
@@ -38,7 +38,7 @@ getRequiredCapabilities' rcaps [] = rcaps
 -- protection.
 checkStores :: [OpCode] -> Either ParseError Bool
 checkStores code = do
-    parsed <- fullStructuredParse code
+    parsed <- fullStructuredParse "(unknown)" code
     pure $ all (not . isUnprotectedStore) parsed
 
 isUnprotectedStore UnprotectedStoreCall = True

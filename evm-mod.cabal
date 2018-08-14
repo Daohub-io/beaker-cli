@@ -36,6 +36,7 @@ library
       OpCode.StructureParser,
       OpCode.Type,
       OpCode.Utils,
+      Check.BeakerCompliance,
       Check.Stores,
       Check.JumpTable,
       Process
@@ -51,11 +52,14 @@ executable beaker
   build-depends:
       base >=4.7 && <5
     , evm-mod
+    , base16-bytestring
     , bytestring
     , attoparsec
     , optparse-applicative
-  other-modules:
-      Paths_evm_mod
+    , text
+  other-modules: Paths_evm_mod
+    , Types
+    , Commands
   default-language: Haskell2010
 
 test-suite evm-mod-test

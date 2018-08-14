@@ -181,7 +181,7 @@ logStoreCall =
 
 data Capabilities = Capabilities
     { caps_storageRange :: (Natural, Natural)
-    } deriving Show
+    } deriving (Eq, Show)
 
 insertProtections :: Capabilities -> [CountedOpCode] -> [CountedOpCode]
 insertProtections caps codes = codes >>= (\ccode -> case ccode of

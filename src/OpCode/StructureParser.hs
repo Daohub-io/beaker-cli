@@ -49,18 +49,9 @@ pushVal = tokenPrim (\c -> show [c])
     (\pos c _cs -> incSourceColumn pos (fromIntegral $ nBytes c))
     (\c -> if isPush c then Just (getPushVal c) else Nothing)
 
-type ErrorAddress = Natural
 
--- |A structured set of @OpCode@s.
-data StructuredCode
-    = ProtectedStoreCall (Natural, Natural)
-    | UnprotectedStoreCall
-    | SystemCall ErrorAddress
-    | OtherOpCode OpCode
-    deriving (Show, Eq)
-
-fullStructuredParse ::[OpCode] -> Either ParseError [StructuredCode]
-fullStructuredParse code = parse (fullStructureParser <* eof) "fullStructuredParse" code
+fullStructuredParse :: FilePath -> [OpCode] -> Either ParseError [StructuredCode]
+fullStructuredParse path code = parse (fullStructureParser <* eof) path code
 
 -- |Parse a contract into structured blocks.
 fullStructureParser :: (Stream s m OpCode) => ParsecT s u m [StructuredCode]

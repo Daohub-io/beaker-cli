@@ -21,6 +21,29 @@ import Test.QuickCheck
 
 import OpCode.Utils
 
+data ProcedureDescription
+    = Compliant
+    | NonCompliant [NonCompliance]
+    deriving (Show, Eq)
+
+data NonCompliance = NonCompliance
+    -- -- |Integer offset into the bytecode of the offending opcode.
+    -- { nonCompliance_offset :: Integer
+    -- -- |The opcode that is non-compliant.
+    -- , nonCompliance_opcode :: OpCode
+    -- }
+    deriving (Show, Eq)
+
+type ErrorAddress = Natural
+
+-- |A structured set of @OpCode@s.
+data StructuredCode
+    = ProtectedStoreCall (Natural, Natural)
+    | UnprotectedStoreCall
+    | SystemCall ErrorAddress
+    | OtherOpCode OpCode
+    deriving (Show, Eq)
+
 data OpCode
     = STOP
     | ADD
