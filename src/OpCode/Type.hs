@@ -27,11 +27,11 @@ data ProcedureDescription
     deriving (Show, Eq)
 
 data NonCompliance = NonCompliance
-    -- -- |Integer offset into the bytecode of the offending opcode.
-    -- { nonCompliance_offset :: Integer
-    -- -- |The opcode that is non-compliant.
-    -- , nonCompliance_opcode :: OpCode
-    -- }
+    -- |Integer offset into the bytecode of the offending opcode.
+    { nonCompliance_offset :: Integer
+    -- |The opcode that is non-compliant.
+    , nonCompliance_opcode :: StructuredCode
+    }
     deriving (Show, Eq)
 
 type ErrorAddress = Natural
