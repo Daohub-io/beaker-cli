@@ -1,17 +1,10 @@
 module Check.JumpTable where
 
 import OpCode.Type
-import OpCode.Utils
-import Data.ByteString (pack)
 import Numeric.Natural
-import qualified Data.Set as S
-
-import Data.List (find)
-
-import Process (countCodes)
 
 extractJumpTable :: [OpCode] -> Maybe [(Natural, Natural)]
-extractJumpTable opcodes@(o:rem) = case takeJumpTable opcodes of
+extractJumpTable opcodes@(_:rem) = case takeJumpTable opcodes of
     Just x -> Just x
     Nothing -> extractJumpTable rem
 extractJumpTable [] = Nothing
@@ -22,7 +15,7 @@ takeJumpTable (JUMPDEST:opcodes) =
     let (entries, rem1) = takeJumpTableEntries opcodes
         (dispatch, rem2) = takeJumpDispatch rem1
     in case (entries, dispatch, rem2) of
-        (entries, Just dispatch, _) -> Just entries
+        (entries, Just _, _) -> Just entries
         _ -> Nothing
 takeJumpTable _ = Nothing
 

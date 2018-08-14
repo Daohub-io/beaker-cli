@@ -114,7 +114,7 @@ parseProtectStoreCallLeaveKey = do
     pure (ll, ul)
 
 -- |Parse the @OpCode@s for logging a SSTORE call.
-parseLogStoreCall :: (Stream s m OpCode) => ParsecT s u m ()
+parseLogStoreCall :: (Stream s m OpCode) => ParsecT s u m StructuredCode
 parseLogStoreCall = do
     -- Load the original values of our memory buffer onto the stack.
     opCode $ PUSH1 $ B.pack [0x60] -- 0x60
@@ -141,5 +141,6 @@ parseLogStoreCall = do
     opCode $ PUSH1 $ B.pack [0x80] -- 0x80
     opCode MSTORE
     pure ()
+    pure $ StoreCallLog topic
     where
         topic = keccak256Bytes "KERNEL_SSTORE"

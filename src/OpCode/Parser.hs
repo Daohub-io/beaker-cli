@@ -14,17 +14,7 @@ import Prelude hiding (LT, EQ, GT)
 
 import Control.Applicative
 import Data.ByteString (pack)
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as C8
 import Data.Attoparsec.ByteString as A
-import Data.Char (isSpace)
-import Data.List as L
-import Debug.Trace
-
-import Data.Word
-import Control.Monad
-
-import Test.QuickCheck
 
 -- |Parse some bytecode. This may be full contract or not. This also accounts
 -- for Swarm metadata, which is not part of the EVM specification, but is

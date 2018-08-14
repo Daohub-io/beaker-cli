@@ -5,19 +5,6 @@ import Commands
 import Process
 import Options.Applicative
 import Data.Semigroup ((<>))
-import Data.String (IsString)
-import Numeric.Natural
-import OpCode.Parser
-import OpCode.Exporter
-
-import qualified Data.Attoparsec.ByteString as A
-import qualified Data.ByteString.Char8 as B
-
--- data Compile = Compile
---     { input :: FilePath
---     , output :: FilePath
---     , capabilities :: Maybe Capabilities
---     } deriving Show
 
 -- |Product data type containing all of the configuring input to the CLI.
 data Options = Options

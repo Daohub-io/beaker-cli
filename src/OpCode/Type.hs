@@ -32,6 +32,7 @@ type ErrorAddress = Natural
 data StructuredCode
     = ProtectedStoreCall (Natural, Natural)
     | UnprotectedStoreCall
+    | StoreCallLog Natural
     | SystemCall ErrorAddress
     | OtherOpCode OpCode
     deriving (Show, Eq)

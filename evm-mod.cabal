@@ -48,7 +48,17 @@ executable beaker
   main-is: Main.hs
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:
+    -threaded -rtsopts -with-rtsopts=-N
+    -Wall
+    -- enable -Werror for throwing errors on warnings. Should be enabled
+    -- for production builds.
+    -- -Werror
+    -fno-warn-name-shadowing
+    -fno-warn-missing-signatures
+    -fno-warn-unused-binds
+    -fno-warn-unused-do-bind
+    -fno-warn-incomplete-patterns
   build-depends:
       base >=4.7 && <5
     , evm-mod
