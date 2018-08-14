@@ -23,10 +23,10 @@ getRequiredCapabilities'
     -> [StructuredCode] -- ^Unprocessed @StructureCode@s
     -> StorageRange
 getRequiredCapabilities' Any _ = Any
-getRequiredCapabilities' (Ranges rs) ((ProtectedStoreCall range):cs) =
+getRequiredCapabilities' (Ranges rs) ((StructuredCode _ (ProtectedStoreCall range)):cs) =
     let newRCaps = Ranges (S.insert range rs)
     in getRequiredCapabilities' newRCaps cs
-getRequiredCapabilities' _ (UnprotectedStoreCall:cs) = getRequiredCapabilities' Any cs
+getRequiredCapabilities' _ ((StructuredCode _ UnprotectedStoreCall):cs) = getRequiredCapabilities' Any cs
 getRequiredCapabilities' rcaps (_:cs) = getRequiredCapabilities' rcaps cs
 getRequiredCapabilities' rcaps [] = rcaps
 
@@ -37,7 +37,8 @@ checkStores code = do
     parsed <- fullStructuredParse "(unknown)" code
     pure $ all (not . isUnprotectedStore) parsed
 
-isUnprotectedStore UnprotectedStoreCall = True
+isUnprotectedStore :: StructuredCode -> Bool
+isUnprotectedStore (StructuredCode _ UnprotectedStoreCall) = True
 isUnprotectedStore _ = False
 
 -- |Check whether a sequence of @OpCode@s constitutes a protected SSTORE. Must

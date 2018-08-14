@@ -7,9 +7,9 @@ import Numeric.Natural
 
 import qualified Data.ByteString as B
 
-import Text.Parsec (incSourceColumn)
+import Text.Parsec (sourceColumn, incSourceColumn)
 import Text.Parsec.Error
-import Text.Parsec.Prim (tokenPrim, Stream, ParsecT, try, many, parse)
+import Text.Parsec.Prim (getPosition, tokenPrim, Stream, ParsecT, try, many, parse)
 import Text.Parsec.Combinator
 
 import OpCode.Type
@@ -55,13 +55,29 @@ fullStructuredParse path code = parse (fullStructureParser <* eof) path code
 
 -- |Parse a contract into structured blocks.
 fullStructureParser :: (Stream s m OpCode) => ParsecT s u m [StructuredCode]
-fullStructureParser = many (choice
-    [ ProtectedStoreCall <$> (try parseLoggedAndProtectedSSTORE)
-    , pure UnprotectedStoreCall <* (opCode SSTORE)
-    -- , StaticSystemCall <$> parseStaticSystemCall
-    , parseDynamicSystemCall
-    , OtherOpCode <$> anyOpCode
+fullStructureParser = many (choice $ map try
+    [ mkStructuredCode (ProtectedStoreCall <$> parseLoggedAndProtectedSSTORE)
+    -- , pure UnprotectedStoreCall <* (opCode SSTORE)
+    -- -- , StaticSystemCall <$> parseStaticSystemCall
+    -- , parseDynamicSystemCall
+    , mkStructuredCode (OtherOpCode <$> anyOpCode)
     ])
+
+getPos :: (Stream s m OpCode) => ParsecT s u m StructuredCodeInfo
+getPos = StructuredCodeInfo <$> (sourceColumn <$> getPosition) <*> pure 0
+
+mkStructuredCode p = do
+    posStart <- getPosition
+    component <- p
+    posEnd <- getPosition
+    let
+        startColumn = sourceColumn posStart
+        endColumn = sourceColumn posEnd
+        -- columns start from one but we want an offset
+        offset  = startColumn - 1
+        size = endColumn - startColumn
+        info = StructuredCodeInfo offset size
+    pure $ StructuredCode info component
 
 -- |Parse an SSTORE call which is properly logged and protected.
 parseLoggedAndProtectedSSTORE :: (Stream s m OpCode) => ParsecT s u m (Natural, Natural)
@@ -85,8 +101,9 @@ parseLoggedAndProtectedSSTORE = do
 --     pure $ SystemCall err_addr
 
 -- |Parse a basic system call without any information about the message.
-parseDynamicSystemCall :: (Stream s m OpCode) => ParsecT s u m StructuredCode
+parseDynamicSystemCall :: (Stream s m OpCode) => ParsecT s u m StructuredCodeComponent
 parseDynamicSystemCall = do
+    pos <- getPosition
     opCode CALLER         -- CALLER         // Get Caller
     opCode DUP1           -- DUP            // Duplicate to Stack
     opCode OpCode.Type.EQ -- EQ             // Check if Caller is Kernel Instance
@@ -114,7 +131,7 @@ parseProtectStoreCallLeaveKey = do
     pure (ll, ul)
 
 -- |Parse the @OpCode@s for logging a SSTORE call.
-parseLogStoreCall :: (Stream s m OpCode) => ParsecT s u m StructuredCode
+parseLogStoreCall :: (Stream s m OpCode) => ParsecT s u m StructuredCodeComponent
 parseLogStoreCall = do
     -- Load the original values of our memory buffer onto the stack.
     opCode $ PUSH1 $ B.pack [0x60] -- 0x60

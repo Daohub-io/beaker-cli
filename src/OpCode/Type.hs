@@ -20,7 +20,7 @@ data ProcedureDescription
 
 data NonCompliance = NonCompliance
     -- |Integer offset into the bytecode of the offending opcode.
-    { nonCompliance_offset :: Integer
+    { nonCompliance_offset :: Int
     -- |The opcode that is non-compliant.
     , nonCompliance_opcode :: StructuredCode
     }
@@ -29,7 +29,19 @@ data NonCompliance = NonCompliance
 type ErrorAddress = Natural
 
 -- |A structured set of @OpCode@s.
-data StructuredCode
+data StructuredCode = StructuredCode
+    StructuredCodeInfo
+    StructuredCodeComponent
+    deriving (Show, Eq)
+
+data StructuredCodeInfo = StructuredCodeInfo
+    -- |The offset of the first byte.
+    { sci_startOffset :: Int
+    -- |The number of bytes of the structured code component.
+    , sci_size :: Int
+    } deriving (Show, Eq)
+
+data StructuredCodeComponent
     = ProtectedStoreCall (Natural, Natural)
     | UnprotectedStoreCall
     | StoreCallLog Natural

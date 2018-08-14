@@ -63,7 +63,7 @@ runCheck readOpt inputPath = do
             Left e -> error $ show e
             Right x -> x
     -- Print out the structured components
-    mapM_ print $ findNonCompliances structure
+    mapM_ (printNonCompliance opcodes) $ findNonCompliances structure
 
 runCompile :: FilePath -> FilePath -> Maybe Capabilities -> IO ()
 runCompile inputFile outputFile capabilities = do
