@@ -1,38 +1,57 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+-- |Defines a parser for turning plain @OpCode@s into something more structured.
 module OpCode.StructureParser where
 
 import Numeric.Natural
 
 import qualified Data.ByteString as B
 
+import Text.Parsec (incSourceColumn)
 import Text.Parsec.Error
-import Text.Parsec.Prim
+import Text.Parsec.Prim (tokenPrim, Stream, ParsecT, try, many, parse)
 import Text.Parsec.Combinator
 
 import OpCode.Type
 import OpCode.Utils
 
-
+-- |Given a predicate f, return a parser which which succeeds if f returns true
+-- on the first element.
+--
+-- * @s@ is the stream type, we are happy with any.
+-- * @m@ is the underlying monad, for which we are also happy with any.
+-- * @u@ is the state type, but @satisfy@ does not interact with any state
+-- * @OpCode@ is the return type
+--
+-- @(Stream s m OpCode)@ is a constraint on the input stream. @Stream@ is a
+-- typeclass encompassing all the stream types we can use. We don't care as long
+-- as it is a member of this typeclass (this is what the constraint says).
+-- @OpCode@ (in this constraint) is the type of element contained within the
+-- stream.
 satisfy :: (Stream s m OpCode) => (OpCode -> Bool) -> ParsecT s u m OpCode
 satisfy f = tokenPrim (\c -> show [c])
                 -- (\pos c _cs -> updatePosChar pos c)
-                (\pos c _cs -> pos)
+                (\pos c _cs -> incSourceColumn pos (fromIntegral $ nBytes c))
                 (\c -> if f c then Just c else Nothing)
 
+-- |Create a parser for a given @OpCode@.
 opCode :: (Stream s m OpCode) => OpCode -> ParsecT s u m OpCode
 opCode opc = satisfy ((==) opc)
 
+-- |Parse any @OpCode@.
 anyOpCode :: (Stream s m OpCode) => ParsecT s u m OpCode
 anyOpCode = satisfy (const True)
 
+-- |Parse any @PUSH1@ - @PUSH32@ value and return the value.
 pushVal :: (Stream s m OpCode) => ParsecT s u m Natural
 pushVal = tokenPrim (\c -> show [c])
     -- (\pos c _cs -> updatePosChar pos c)
-    (\pos c _cs -> pos)
+    (\pos c _cs -> incSourceColumn pos (fromIntegral $ nBytes c))
     (\c -> if isPush c then Just (getPushVal c) else Nothing)
 
 type ErrorAddress = Natural
+
+-- |A structured set of @OpCode@s.
 data StructuredCode
     = ProtectedStoreCall (Natural, Natural)
     | UnprotectedStoreCall
@@ -53,6 +72,7 @@ fullStructureParser = many (choice
     , OtherOpCode <$> anyOpCode
     ])
 
+-- |Parse an SSTORE call which is properly logged and protected.
 parseLoggedAndProtectedSSTORE :: (Stream s m OpCode) => ParsecT s u m (Natural, Natural)
 parseLoggedAndProtectedSSTORE = do
     range <- parseProtectStoreCallLeaveKey
@@ -73,6 +93,7 @@ parseLoggedAndProtectedSSTORE = do
 --     opcode DELEGATECALL
 --     pure $ SystemCall err_addr
 
+-- |Parse a basic system call without any information about the message.
 parseDynamicSystemCall :: (Stream s m OpCode) => ParsecT s u m StructuredCode
 parseDynamicSystemCall = do
     opCode CALLER         -- CALLER         // Get Caller
@@ -84,6 +105,7 @@ parseDynamicSystemCall = do
     opCode DELEGATECALL   -- DELEGATECALL   // Delegate Call to Caller
     pure $ SystemCall err_addr
 
+-- |Parse a protected SSTORE call which leaves the storage key on the stack.
 parseProtectStoreCallLeaveKey :: (Stream s m OpCode) => ParsecT s u m (Natural, Natural)
 parseProtectStoreCallLeaveKey = do
     ll <- pushVal -- lower limit (NOTE: this is now any PUSH size)
@@ -100,6 +122,7 @@ parseProtectStoreCallLeaveKey = do
     opCode SSTORE -- perform the store
     pure (ll, ul)
 
+-- |Parse the @OpCode@s for logging a SSTORE call.
 parseLogStoreCall :: (Stream s m OpCode) => ParsecT s u m ()
 parseLogStoreCall = do
     -- Load the original values of our memory buffer onto the stack.

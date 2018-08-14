@@ -18,11 +18,15 @@ import Control.Monad
 
 import Test.QuickCheck
 
+-- |Pad out a @ByteString@ to fit into an EVM value. Throw an error if it is
+-- too large.
+pad :: Int -> ByteString -> ByteString
 pad i bs =
-  let diff = i - (B.length bs)
-      pads = B.replicate diff 0x00
-  in pads `B.append` bs
+    let diff = i - (B.length bs)
+        pads = B.replicate diff 0x00
+    in if diff < 0 then error "too large for EVM value" else pads `B.append` bs
 
+-- |Convert @OpCode@s to bytes for direct output.
 toByteString :: OpCode -> ByteString
 toByteString STOP = pack [0x00]
 toByteString ADD = pack [0x01]
