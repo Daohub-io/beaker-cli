@@ -6,6 +6,8 @@ Copyright   : (c) Daolab 2018
 Functionality for parsing EVM bytecode.
 -}
 
+-- Unused do binds are common in parsers, so we will allow them.
+{-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 module OpCode.Parser where
 
 import OpCode.Type

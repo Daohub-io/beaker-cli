@@ -1,5 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+-- Unused do binds are common in parsers, so we will allow them.
+{-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 -- |Defines a parser for turning plain @OpCode@s into something more structured.
 module OpCode.StructureParser where
 
@@ -13,7 +15,6 @@ import Text.Parsec.Prim (getPosition, tokenPrim, Stream, ParsecT, try, many, par
 import Text.Parsec.Combinator
 
 import OpCode.Type
-import OpCode.Utils
 
 -- |Given a predicate f, return a parser which which succeeds if f returns true
 -- on the first element.
@@ -103,7 +104,6 @@ parseLoggedAndProtectedSSTORE = do
 -- |Parse a basic system call without any information about the message.
 parseDynamicSystemCall :: (Stream s m OpCode) => ParsecT s u m StructuredCodeComponent
 parseDynamicSystemCall = do
-    pos <- getPosition
     opCode CALLER         -- CALLER         // Get Caller
     opCode DUP1           -- DUP            // Duplicate to Stack
     opCode OpCode.Type.EQ -- EQ             // Check if Caller is Kernel Instance
@@ -159,5 +159,5 @@ parseLogStoreCall = do
     opCode MSTORE
     pure ()
     pure $ StoreCallLog topic
-    where
-        topic = keccak256Bytes "KERNEL_SSTORE"
+    -- where
+    --     topic = OpCode.Utils.keccak256Bytes "KERNEL_SSTORE"

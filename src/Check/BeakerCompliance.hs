@@ -11,7 +11,7 @@ import OpCode.Type
 import Data.List (foldl')
 
 printNonCompliance :: [OpCode] -> NonCompliance -> IO ()
-printNonCompliance opcodes (NonCompliance _ (StructuredCode sci scc)) = do
+printNonCompliance _ (NonCompliance _ (StructuredCode sci scc)) = do
     putStr "Non-Compliance:"
     putStr $ " Offset: " ++ (show $ sci_startOffset sci)
     putStr $ " Size: " ++ (show $ sci_size sci)
