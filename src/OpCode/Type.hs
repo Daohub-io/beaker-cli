@@ -2,8 +2,10 @@ module OpCode.Type where
 
 import Prelude hiding (LT, EQ, GT)
 
-import Data.ByteString
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as B
 import Data.ByteString.Base16 as B16 (encode)
+import Data.ByteString.Char8 (unpack)
 
 import Control.Monad
 
@@ -246,38 +248,38 @@ instance Show OpCode where
     show MSIZE = "MSIZE"
     show GAS = "GAS"
     show JUMPDEST = "JUMPDEST"
-    show (PUSH1 bytes) = "PUSH1 " ++ show (B16.encode bytes)
-    show (PUSH2 bytes) = "PUSH2 " ++ show (B16.encode bytes)
-    show (PUSH3 bytes) = "PUSH3 " ++ show (B16.encode bytes)
-    show (PUSH4 bytes) = "PUSH4 " ++ show (B16.encode bytes)
-    show (PUSH5 bytes) = "PUSH5 " ++ show (B16.encode bytes)
-    show (PUSH6 bytes) = "PUSH6 " ++ show (B16.encode bytes)
-    show (PUSH7 bytes) = "PUSH7 " ++ show (B16.encode bytes)
-    show (PUSH8 bytes) = "PUSH8 " ++ show (B16.encode bytes)
-    show (PUSH9 bytes) = "PUSH9 " ++ show (B16.encode bytes)
-    show (PUSH10 bytes) = "PUSH10 " ++ show (B16.encode bytes)
-    show (PUSH11 bytes) = "PUSH11 " ++ show (B16.encode bytes)
-    show (PUSH12 bytes) = "PUSH12 " ++ show (B16.encode bytes)
-    show (PUSH13 bytes) = "PUSH13 " ++ show (B16.encode bytes)
-    show (PUSH14 bytes) = "PUSH14 " ++ show (B16.encode bytes)
-    show (PUSH15 bytes) = "PUSH15 " ++ show (B16.encode bytes)
-    show (PUSH16 bytes) = "PUSH16 " ++ show (B16.encode bytes)
-    show (PUSH17 bytes) = "PUSH17 " ++ show (B16.encode bytes)
-    show (PUSH18 bytes) = "PUSH18 " ++ show (B16.encode bytes)
-    show (PUSH19 bytes) = "PUSH19 " ++ show (B16.encode bytes)
-    show (PUSH20 bytes) = "PUSH20 " ++ show (B16.encode bytes)
-    show (PUSH21 bytes) = "PUSH21 " ++ show (B16.encode bytes)
-    show (PUSH22 bytes) = "PUSH22 " ++ show (B16.encode bytes)
-    show (PUSH23 bytes) = "PUSH23 " ++ show (B16.encode bytes)
-    show (PUSH24 bytes) = "PUSH24 " ++ show (B16.encode bytes)
-    show (PUSH25 bytes) = "PUSH25 " ++ show (B16.encode bytes)
-    show (PUSH26 bytes) = "PUSH26 " ++ show (B16.encode bytes)
-    show (PUSH27 bytes) = "PUSH27 " ++ show (B16.encode bytes)
-    show (PUSH28 bytes) = "PUSH28 " ++ show (B16.encode bytes)
-    show (PUSH29 bytes) = "PUSH29 " ++ show (B16.encode bytes)
-    show (PUSH30 bytes) = "PUSH30 " ++ show (B16.encode bytes)
-    show (PUSH31 bytes) = "PUSH31 " ++ show (B16.encode bytes)
-    show (PUSH32 bytes) = "PUSH32 " ++ show (B16.encode bytes)
+    show (PUSH1 bytes) = "PUSH1 0x" ++ unpack (B16.encode bytes)
+    show (PUSH2 bytes) = "PUSH2 0x" ++ unpack (B16.encode bytes)
+    show (PUSH3 bytes) = "PUSH3 0x" ++ unpack (B16.encode bytes)
+    show (PUSH4 bytes) = "PUSH4 0x" ++ unpack (B16.encode bytes)
+    show (PUSH5 bytes) = "PUSH5 0x" ++ unpack (B16.encode bytes)
+    show (PUSH6 bytes) = "PUSH6 0x" ++ unpack (B16.encode bytes)
+    show (PUSH7 bytes) = "PUSH7 0x" ++ unpack (B16.encode bytes)
+    show (PUSH8 bytes) = "PUSH8 0x" ++ unpack (B16.encode bytes)
+    show (PUSH9 bytes) = "PUSH9 0x" ++ unpack (B16.encode bytes)
+    show (PUSH10 bytes) = "PUSH10 0x" ++ unpack (B16.encode bytes)
+    show (PUSH11 bytes) = "PUSH11 0x" ++ unpack (B16.encode bytes)
+    show (PUSH12 bytes) = "PUSH12 0x" ++ unpack (B16.encode bytes)
+    show (PUSH13 bytes) = "PUSH13 0x" ++ unpack (B16.encode bytes)
+    show (PUSH14 bytes) = "PUSH14 0x" ++ unpack (B16.encode bytes)
+    show (PUSH15 bytes) = "PUSH15 0x" ++ unpack (B16.encode bytes)
+    show (PUSH16 bytes) = "PUSH16 0x" ++ unpack (B16.encode bytes)
+    show (PUSH17 bytes) = "PUSH17 0x" ++ unpack (B16.encode bytes)
+    show (PUSH18 bytes) = "PUSH18 0x" ++ unpack (B16.encode bytes)
+    show (PUSH19 bytes) = "PUSH19 0x" ++ unpack (B16.encode bytes)
+    show (PUSH20 bytes) = "PUSH20 0x" ++ unpack (B16.encode bytes)
+    show (PUSH21 bytes) = "PUSH21 0x" ++ unpack (B16.encode bytes)
+    show (PUSH22 bytes) = "PUSH22 0x" ++ unpack (B16.encode bytes)
+    show (PUSH23 bytes) = "PUSH23 0x" ++ unpack (B16.encode bytes)
+    show (PUSH24 bytes) = "PUSH24 0x" ++ unpack (B16.encode bytes)
+    show (PUSH25 bytes) = "PUSH25 0x" ++ unpack (B16.encode bytes)
+    show (PUSH26 bytes) = "PUSH26 0x" ++ unpack (B16.encode bytes)
+    show (PUSH27 bytes) = "PUSH27 0x" ++ unpack (B16.encode bytes)
+    show (PUSH28 bytes) = "PUSH28 0x" ++ unpack (B16.encode bytes)
+    show (PUSH29 bytes) = "PUSH29 0x" ++ unpack (B16.encode bytes)
+    show (PUSH30 bytes) = "PUSH30 0x" ++ unpack (B16.encode bytes)
+    show (PUSH31 bytes) = "PUSH31 0x" ++ unpack (B16.encode bytes)
+    show (PUSH32 bytes) = "PUSH32 0x" ++ unpack (B16.encode bytes)
     show DUP1 = "DUP1"
     show DUP2 = "DUP2"
     show DUP3 = "DUP3"
@@ -500,69 +502,69 @@ instance Arbitrary OpCode where
         ]
 
 arbitraryPUSH1 :: Gen OpCode
-arbitraryPUSH1  = PUSH1  <$> (fmap pack $ replicateM 1 arbitrary)
+arbitraryPUSH1  = PUSH1  <$> (fmap B.pack $ replicateM 1 arbitrary)
 arbitraryPUSH2 :: Gen OpCode
-arbitraryPUSH2  = PUSH2  <$> (fmap pack $ replicateM  2 arbitrary)
+arbitraryPUSH2  = PUSH2  <$> (fmap B.pack $ replicateM  2 arbitrary)
 arbitraryPUSH3 :: Gen OpCode
-arbitraryPUSH3  = PUSH3  <$> (fmap pack $ replicateM  3 arbitrary)
+arbitraryPUSH3  = PUSH3  <$> (fmap B.pack $ replicateM  3 arbitrary)
 arbitraryPUSH4 :: Gen OpCode
-arbitraryPUSH4  = PUSH4  <$> (fmap pack $ replicateM  4 arbitrary)
+arbitraryPUSH4  = PUSH4  <$> (fmap B.pack $ replicateM  4 arbitrary)
 arbitraryPUSH5 :: Gen OpCode
-arbitraryPUSH5  = PUSH5  <$> (fmap pack $ replicateM  5 arbitrary)
+arbitraryPUSH5  = PUSH5  <$> (fmap B.pack $ replicateM  5 arbitrary)
 arbitraryPUSH6 :: Gen OpCode
-arbitraryPUSH6  = PUSH6  <$> (fmap pack $ replicateM  6 arbitrary)
+arbitraryPUSH6  = PUSH6  <$> (fmap B.pack $ replicateM  6 arbitrary)
 arbitraryPUSH7 :: Gen OpCode
-arbitraryPUSH7  = PUSH7  <$> (fmap pack $ replicateM  7 arbitrary)
+arbitraryPUSH7  = PUSH7  <$> (fmap B.pack $ replicateM  7 arbitrary)
 arbitraryPUSH8 :: Gen OpCode
-arbitraryPUSH8  = PUSH8  <$> (fmap pack $ replicateM  8 arbitrary)
+arbitraryPUSH8  = PUSH8  <$> (fmap B.pack $ replicateM  8 arbitrary)
 arbitraryPUSH9 :: Gen OpCode
-arbitraryPUSH9  = PUSH9  <$> (fmap pack $ replicateM  9 arbitrary)
+arbitraryPUSH9  = PUSH9  <$> (fmap B.pack $ replicateM  9 arbitrary)
 arbitraryPUSH10 :: Gen OpCode
-arbitraryPUSH10 = PUSH10 <$> (fmap pack $ replicateM 10 arbitrary)
+arbitraryPUSH10 = PUSH10 <$> (fmap B.pack $ replicateM 10 arbitrary)
 arbitraryPUSH11 :: Gen OpCode
-arbitraryPUSH11 = PUSH11 <$> (fmap pack $ replicateM 11 arbitrary)
+arbitraryPUSH11 = PUSH11 <$> (fmap B.pack $ replicateM 11 arbitrary)
 arbitraryPUSH12 :: Gen OpCode
-arbitraryPUSH12 = PUSH12 <$> (fmap pack $ replicateM 12 arbitrary)
+arbitraryPUSH12 = PUSH12 <$> (fmap B.pack $ replicateM 12 arbitrary)
 arbitraryPUSH13 :: Gen OpCode
-arbitraryPUSH13 = PUSH13 <$> (fmap pack $ replicateM 13 arbitrary)
+arbitraryPUSH13 = PUSH13 <$> (fmap B.pack $ replicateM 13 arbitrary)
 arbitraryPUSH14 :: Gen OpCode
-arbitraryPUSH14 = PUSH14 <$> (fmap pack $ replicateM 14 arbitrary)
+arbitraryPUSH14 = PUSH14 <$> (fmap B.pack $ replicateM 14 arbitrary)
 arbitraryPUSH15 :: Gen OpCode
-arbitraryPUSH15 = PUSH15 <$> (fmap pack $ replicateM 15 arbitrary)
+arbitraryPUSH15 = PUSH15 <$> (fmap B.pack $ replicateM 15 arbitrary)
 arbitraryPUSH16 :: Gen OpCode
-arbitraryPUSH16 = PUSH16 <$> (fmap pack $ replicateM 16 arbitrary)
+arbitraryPUSH16 = PUSH16 <$> (fmap B.pack $ replicateM 16 arbitrary)
 arbitraryPUSH17 :: Gen OpCode
-arbitraryPUSH17 = PUSH17 <$> (fmap pack $ replicateM 17 arbitrary)
+arbitraryPUSH17 = PUSH17 <$> (fmap B.pack $ replicateM 17 arbitrary)
 arbitraryPUSH18 :: Gen OpCode
-arbitraryPUSH18 = PUSH18 <$> (fmap pack $ replicateM 18 arbitrary)
+arbitraryPUSH18 = PUSH18 <$> (fmap B.pack $ replicateM 18 arbitrary)
 arbitraryPUSH19 :: Gen OpCode
-arbitraryPUSH19 = PUSH19 <$> (fmap pack $ replicateM 19 arbitrary)
+arbitraryPUSH19 = PUSH19 <$> (fmap B.pack $ replicateM 19 arbitrary)
 arbitraryPUSH20 :: Gen OpCode
-arbitraryPUSH20 = PUSH20 <$> (fmap pack $ replicateM 20 arbitrary)
+arbitraryPUSH20 = PUSH20 <$> (fmap B.pack $ replicateM 20 arbitrary)
 arbitraryPUSH21 :: Gen OpCode
-arbitraryPUSH21 = PUSH21 <$> (fmap pack $ replicateM 21 arbitrary)
+arbitraryPUSH21 = PUSH21 <$> (fmap B.pack $ replicateM 21 arbitrary)
 arbitraryPUSH22 :: Gen OpCode
-arbitraryPUSH22 = PUSH22 <$> (fmap pack $ replicateM 22 arbitrary)
+arbitraryPUSH22 = PUSH22 <$> (fmap B.pack $ replicateM 22 arbitrary)
 arbitraryPUSH23 :: Gen OpCode
-arbitraryPUSH23 = PUSH23 <$> (fmap pack $ replicateM 23 arbitrary)
+arbitraryPUSH23 = PUSH23 <$> (fmap B.pack $ replicateM 23 arbitrary)
 arbitraryPUSH24 :: Gen OpCode
-arbitraryPUSH24 = PUSH24 <$> (fmap pack $ replicateM 24 arbitrary)
+arbitraryPUSH24 = PUSH24 <$> (fmap B.pack $ replicateM 24 arbitrary)
 arbitraryPUSH25 :: Gen OpCode
-arbitraryPUSH25 = PUSH25 <$> (fmap pack $ replicateM 25 arbitrary)
+arbitraryPUSH25 = PUSH25 <$> (fmap B.pack $ replicateM 25 arbitrary)
 arbitraryPUSH26 :: Gen OpCode
-arbitraryPUSH26 = PUSH26 <$> (fmap pack $ replicateM 26 arbitrary)
+arbitraryPUSH26 = PUSH26 <$> (fmap B.pack $ replicateM 26 arbitrary)
 arbitraryPUSH27 :: Gen OpCode
-arbitraryPUSH27 = PUSH27 <$> (fmap pack $ replicateM 27 arbitrary)
+arbitraryPUSH27 = PUSH27 <$> (fmap B.pack $ replicateM 27 arbitrary)
 arbitraryPUSH28 :: Gen OpCode
-arbitraryPUSH28 = PUSH28 <$> (fmap pack $ replicateM 28 arbitrary)
+arbitraryPUSH28 = PUSH28 <$> (fmap B.pack $ replicateM 28 arbitrary)
 arbitraryPUSH29 :: Gen OpCode
-arbitraryPUSH29 = PUSH29 <$> (fmap pack $ replicateM 29 arbitrary)
+arbitraryPUSH29 = PUSH29 <$> (fmap B.pack $ replicateM 29 arbitrary)
 arbitraryPUSH30 :: Gen OpCode
-arbitraryPUSH30 = PUSH30 <$> (fmap pack $ replicateM 30 arbitrary)
+arbitraryPUSH30 = PUSH30 <$> (fmap B.pack $ replicateM 30 arbitrary)
 arbitraryPUSH31 :: Gen OpCode
-arbitraryPUSH31 = PUSH31 <$> (fmap pack $ replicateM 31 arbitrary)
+arbitraryPUSH31 = PUSH31 <$> (fmap B.pack $ replicateM 31 arbitrary)
 arbitraryPUSH32 :: Gen OpCode
-arbitraryPUSH32 = PUSH32 <$> (fmap pack $ replicateM 32 arbitrary)
+arbitraryPUSH32 = PUSH32 <$> (fmap B.pack $ replicateM 32 arbitrary)
 
 
 getPushVal :: OpCode -> Natural

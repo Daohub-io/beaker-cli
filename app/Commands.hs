@@ -55,6 +55,9 @@ runStructures readOpt inputPath = do
             (sci_size $ sc_info sc)
             (show $ sc_component sc)
 
+-- printStructure (OtherOpCode oc) =
+-- printStructure a = show a
+
 runCheck :: ReadOpt -> FilePath -> IO ()
 runCheck readOpt inputPath = do
     -- Read the file in
