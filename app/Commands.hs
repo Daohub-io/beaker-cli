@@ -48,7 +48,12 @@ runStructures readOpt inputPath = do
             Left e -> error $ show e
             Right x -> x
     -- Print out the structured components
-    mapM_ print structure
+    mapM_ printE structure
+    where
+        printE sc = printf "0x%x: size: 0x%x %s\n"
+            (sci_startOffset $ sc_info sc)
+            (sci_size $ sc_info sc)
+            (show $ sc_component sc)
 
 runCheck :: ReadOpt -> FilePath -> IO ()
 runCheck readOpt inputPath = do

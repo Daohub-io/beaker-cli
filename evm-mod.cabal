@@ -50,8 +50,6 @@ library
     -- -Werror
     -fno-warn-name-shadowing
     -fno-warn-missing-signatures
-    -- -fno-warn-unused-binds
-    -fno-warn-incomplete-patterns
 
 executable beaker
   main-is: Main.hs
@@ -66,7 +64,6 @@ executable beaker
     -fno-warn-name-shadowing
     -fno-warn-missing-signatures
     -fno-warn-unused-binds
-    -fno-warn-incomplete-patterns
   build-depends:
       base >=4.7 && <5
     , evm-mod
