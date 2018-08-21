@@ -1,3 +1,16 @@
+{-|
+Module      : OSMain
+Description : Operatin System Type tests
+Copyright   :
+License     :
+Maintainer  : jake@daolab.io
+Stability   :
+Portability :
+
+This tests behaviour of certain chunks of code the will go into building
+beakeros. For example it tests the behaviour around DELEGATECALL and CALLCODE
+how they will behave in the context of an operating system or kernel.
+-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 module Main where
@@ -100,11 +113,18 @@ osTests = TestList
     [ trivialOnChain
     , trivialOnChainAutoDeploy
     , testCaller
-    , testKernelCaller
+    , testKernelCallerCALLCODE
+    , testKernelCallerDELEGATECALL
     ]
 
+-- |Deploy a trivial example of a contract on chain and check that the code on
+-- chain is what we wanted deployed. In this case the deployment code is written
+-- manually.
+--
+-- This trivial contract doesn't actually do anything and is just randm opcodes.
 trivialOnChain = TestLabel "Trivial on chain" $ TestCase $ do
         let bytecode =
+                -- Start deployment code
                 [ PUSH1 (pack [0x10])
                 , DUP1
                 , PUSH1 (pack [0x0f])
@@ -113,10 +133,20 @@ trivialOnChain = TestLabel "Trivial on chain" $ TestCase $ do
                 , PUSH1 (pack [0x00])
                 , RETURN
                 , STOP
+                -- End deployment code
+                -- Start of contract
+
+                -- Call data starting from position 0
                 , PUSH1 (pack [0x00])
                 , CALLDATALOAD
+
+                -- Load storage at the address found in the call data
                 , SLOAD
+
+                -- Negate every bit of this value
                 , NOT
+
+                -- If this new value is non-zero, jump to position 9
                 , PUSH1 (pack [0x09])
                 , JUMPI
                 , STOP
@@ -125,6 +155,7 @@ trivialOnChain = TestLabel "Trivial on chain" $ TestCase $ do
                 , PUSH1 (pack [0x00])
                 , CALLDATALOAD
                 , SSTORE
+                -- End of contract
                 ]
 
         let bsEncoded = B16.encode $ B.concat $ map toByteString bytecode
@@ -138,9 +169,12 @@ trivialOnChain = TestLabel "Trivial on chain" $ TestCase $ do
 
         (Right code) <- runWeb3 $ getCode newContractAddress Latest
         actualRunCode <- parseGoodExample $ fst $ B16.decode $ B.drop 2 $ encodeUtf8 code
-        -- mapM_ print actualRunCode
         pure ()
 
+-- |Deploy a trivial example of a contract on chain and check that the code on
+-- chain is what we wanted deployed. This uses the function @makeDeployable@ to
+-- convert normal contract code into something that can be deployed (with no
+-- special constructor code).
 trivialOnChainAutoDeploy = TestLabel "Trivial on chain auto-deploy" $ TestCase $ do
     let deployable = makeDeployable kernelCode
 
@@ -158,6 +192,8 @@ trivialOnChainAutoDeploy = TestLabel "Trivial on chain auto-deploy" $ TestCase $
     assertEqual "Actual run code should be the same as initial code" kernelCode actualRunCode
     pure ()
 
+-- |This deploys and runs the @returnCallerCode@ contract, and tests that it
+-- correctly returns our address.
 testCaller = TestLabel "Test Caller" $ TestCase $ do
     let deployable = makeDeployable returnCallerCode
 
@@ -172,7 +208,6 @@ testCaller = TestLabel "Test Caller" $ TestCase $ do
 
     (Right code) <- runWeb3 $ getCode newContractAddress Latest
     actualRunCode <- parseGoodExample $ fst $ B16.decode $ B.drop 2 $ encodeUtf8 code
-    -- assertEqual "Actual run code should be the same as initial code" kernelCode actualRunCode
     (Right result) <- retrieveCaller newContractAddress
     (Right sender) <-  runWeb3 $ do
         accs <- accounts
@@ -199,38 +234,48 @@ testCaller = TestLabel "Test Caller" $ TestCase $ do
             theCall <- Eth.call details Latest -- TODO: switch back to using this for the result
             pure (theCall)
 
-testKernelCaller = TestLabel "Test Kernel Caller" $ TestCase $ do
+-- |This:
+--
+-- 1. Deploys @returnCallerCode@ contract.
+-- 2. Deploys a "customKernel" contract.
+-- 3. Sends a transaction to the kernel contract asking it to call the
+--    @returnCallerCode@ contract (using DELEGATECALL).
+-- 4. The kernel then returns the return value from @returnCallerCode@.
+-- 5. Checks that the address @returnCallerCode@ gave is the address of the
+--    original sender, as we are using DELEGATECALL.
+testKernelCallerDELEGATECALL = TestLabel "Test Kernel Caller (DELEGATECALL)" $ TestCase $ do
     let deployable = makeDeployable returnCallerCode
-    let deployableKernel = makeDeployable kernelCode
 
-    let bsEncoded = B16.encode $ B.concat $ map toByteString deployable
+    -- Get the account we will be using
     (Right sender) <- runWeb3 $ do
         accs <- accounts
         case accs of
-                [] -> error "No accounts available"
-                (a:_) -> pure a
+            [] -> error "No accounts available"
+            (a:_) -> pure a
+    -- Encode the @returnCallerCode@ contract
+    let bsEncoded = B16.encode $ B.concat $ map toByteString deployable
+    -- Deploy the @returnCallerCode@ contract
     (res, tx) <- deployContract sender bsEncoded
+    -- Get the address of this deployed @returnCallerCode@ contract
     newContractAddress <- getContractAddress tx
-    let newKernelCode = customKernelCode newContractAddress
+
+    -- Create a kernel that calls this @returnCallerCode@ contract
+    let newKernelCode = customKernelCodeDELEGATECALL newContractAddress
         deployableKernelCode = makeDeployable newKernelCode
+    -- Encode the kernel
     let bsEncoded = B16.encode $ B.concat $ map toByteString deployableKernelCode
+    -- Deploy the kernel
     (_, txK) <- deployContract sender bsEncoded
+    -- Retrieve the kernel address
     kernelAddress <- getContractAddress txK
-    print kernelAddress
-    print newContractAddress
 
     (Right code) <- runWeb3 $ getCode kernelAddress Latest
     actualRunCode <- parseGoodExample $ fst $ B16.decode $ B.drop 2 $ encodeUtf8 code
-    mapM_ print actualRunCode
-    -- assertEqual "Actual run code should be the same as initial code" kernelCode actualRunCode
-    (Right result) <- retrieveCaller newContractAddress
-    (Right sender) <-  runWeb3 $ do
-        accs <- accounts
-        let sender = case accs of
-                [] -> error "No accounts available"
-                (a:_) -> a
-        pure sender
-    assertEqual "The caller should equal the kernel" ("0x" <> Address.toText sender) result
+
+    -- Call the kernel (which in turn calls the contract)
+    (Right result) <- retrieveCaller kernelAddress
+
+    assertEqual "The caller should equal the sender" ("0x" <> Address.toText sender) result
     pure ()
     where
         retrieveCaller newContractAddress = runWeb3 $ do
@@ -249,7 +294,68 @@ testKernelCaller = TestLabel "Test Kernel Caller" $ TestCase $ do
             theCall <- Eth.call details Latest -- TODO: switch back to using this for the result
             pure (theCall)
 
--- Take bytecode in a deployed format and make it deployable with no constructor
+-- |This:
+--
+-- 1. Deploys @returnCallerCode@ contract.
+-- 2. Deploys a "customKernel" contract.
+-- 3. Sends a transaction to the kernel contract asking it to call the
+--    @returnCallerCode@ contract (using CALLCODE).
+-- 4. The kernel then returns the return value from @returnCallerCode@.
+-- 5. Checks that the address @returnCallerCode@ gave is the address of the
+--    kernel, as we are using CALLCODE.
+testKernelCallerCALLCODE = TestLabel "Test Kernel Caller (CALLCODE)" $ TestCase $ do
+    let deployable = makeDeployable returnCallerCode
+
+    -- Get the account we will be using
+    (Right sender) <- runWeb3 $ do
+        accs <- accounts
+        case accs of
+            [] -> error "No accounts available"
+            (a:_) -> pure a
+    -- Encode the @returnCallerCode@ contract
+    let bsEncoded = B16.encode $ B.concat $ map toByteString deployable
+    -- Deploy the @returnCallerCode@ contract
+    (res, tx) <- deployContract sender bsEncoded
+    -- Get the address of this deployed @returnCallerCode@ contract
+    newContractAddress <- getContractAddress tx
+
+    -- Create a kernel that calls this @returnCallerCode@ contract
+    let newKernelCode = customKernelCodeCALLCODE newContractAddress
+        deployableKernelCode = makeDeployable newKernelCode
+    -- Encode the kernel
+    let bsEncoded = B16.encode $ B.concat $ map toByteString deployableKernelCode
+    -- Deploy the kernel
+    (_, txK) <- deployContract sender bsEncoded
+    -- Retrieve the kernel address
+    kernelAddress <- getContractAddress txK
+
+    (Right code) <- runWeb3 $ getCode kernelAddress Latest
+    actualRunCode <- parseGoodExample $ fst $ B16.decode $ B.drop 2 $ encodeUtf8 code
+
+    -- Call the kernel (which in turn calls the contract)
+    (Right result) <- retrieveCaller kernelAddress
+    assertEqual "The caller should equal the kernel" ("0x" <> Address.toText kernelAddress) result
+    pure ()
+    where
+        retrieveCaller newContractAddress = runWeb3 $ do
+            accs <- accounts
+            let sender = case accs of
+                    [] -> error "No accounts available"
+                    (a:_) -> a
+            let details = Call {
+                    callFrom = Just sender,
+                    callTo = Just newContractAddress,
+                    callGas = Nothing,
+                    callGasPrice = Nothing,
+                    callValue = Nothing,
+                    callData = Nothing
+                }
+            theCall <- Eth.call details Latest -- TODO: switch back to using this for the result
+            pure (theCall)
+
+-- |Take bytecode in a deployed format and make it deployable with no
+-- constructor.
+makeDeployable :: [OpCode] -> [OpCode]
 makeDeployable code = deployHeader ++ code
     where
         memStart = 0x10
@@ -266,6 +372,8 @@ makeDeployable code = deployHeader ++ code
             , STOP
             ]
 
+-- |Non-sensical random opcodes. (I think).
+kernelCode :: [OpCode]
 kernelCode =
     [ SLOAD
     , NOT
@@ -280,29 +388,62 @@ kernelCode =
     ]
     -- delegatecall(g, a, in, insize, out, outsize)
 
-customKernelCode :: Address -> [OpCode]
-customKernelCode address =
-    [ PUSH1 (pack [0x1c]) -- outsize
-    , DUP1 -- to be used by return later
+-- |This is a simple kernel which calls the address given (at deployment). It
+-- ignores any calldata. It is fixed to only receive 20 bytes (such as an
+-- address) from its callee, and return 20 bytes. It uses DELEGATECALL.
+customKernelCodeDELEGATECALL :: Address -> [OpCode]
+customKernelCodeDELEGATECALL address =
+    [ PUSH1 (pack [0x14]) -- outsize
     , PUSH1 (pack [0x00]) -- out
-    , DUP1 -- to be used by return later
     , PUSH1 (pack [0x00]) -- insize
     , PUSH1 (pack [0x00]) -- in
     , PUSH20 addressBytes -- address
     , PUSH2 (pack [0xff,0xff]) -- gas
     , DELEGATECALL
-    , PUSH1 (pack [0x1c]) -- outsize
+    , PUSH1 (pack [0x14]) -- outsize
     , PUSH1 (pack [0x00]) -- out
     , RETURN
     ]
     where
         (addressBytes,_) = B16.decode $ encodeUtf8 $ Address.toText $ address
 
+-- |This is a simple kernel which calls the address given (at deployment). It
+-- ignores any calldata. It is fixed to only receive 20 bytes (such as an
+-- address) from its callee, and return 20 bytes. It uses CALLCODE.
+customKernelCodeCALLCODE :: Address -> [OpCode]
+customKernelCodeCALLCODE address =
+    [ PUSH1 (pack [0x14]) -- outsize
+    , PUSH1 (pack [0x00]) -- out
+    , PUSH1 (pack [0x00]) -- insize
+    , PUSH1 (pack [0x00]) -- in
+    , PUSH1 (pack [0x00]) -- send value
+    , PUSH20 addressBytes -- address
+    , PUSH2 (pack [0xff,0xff]) -- gas
+    , CALLCODE
+    -- TODO: check return result
+    -- Start a quick hack to test returning
+    -- put the CALLCODE error code into the first byte
+    -- , PUSH1 (pack [0x00])
+    -- , MSTORE8
+    -- End a quick hack to test returning
+    , PUSH1 (pack [0x14]) -- outsize
+    , PUSH1 (pack [0x00]) -- out
+    , RETURN
+    ]
+    where
+        (addressBytes,_) = B16.decode $ encodeUtf8 $ Address.toText $ address
+
+
+-- |This is a contract which simply returns the value of its caller.
+returnCallerCode :: [OpCode]
 returnCallerCode =
     [ CALLER
     , PUSH1 (pack [0x00])
     , MSTORE
+    -- outsize, 20 (0x14) bytes, an address is 20 bytes
     , PUSH1 (pack [0x14])
+    -- out, start 12 (0xc) bytes in as the as the address is in the last 20
+    -- bytes (32-20=12)
     , PUSH1 (pack [0x0c])
     , RETURN
     ]
