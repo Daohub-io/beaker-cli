@@ -36,26 +36,45 @@ library
       OpCode.StructureParser,
       OpCode.Type,
       OpCode.Utils,
+      Check.BeakerCompliance,
       Check.Stores,
       Check.JumpTable,
       Process
   other-modules:
       Paths_evm_mod
   default-language: Haskell2010
+  ghc-options:
+    -Wall
+    -- enable -Werror for throwing errors on warnings. Should be enabled
+    -- for production builds.
+    -- -Werror
+    -fno-warn-name-shadowing
+    -fno-warn-missing-signatures
 
 executable beaker
   main-is: Main.hs
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:
+    -threaded -rtsopts -with-rtsopts=-N
+    -Wall
+    -- enable -Werror for throwing errors on warnings. Should be enabled
+    -- for production builds.
+    -- -Werror
+    -fno-warn-name-shadowing
+    -fno-warn-missing-signatures
+    -fno-warn-unused-binds
   build-depends:
       base >=4.7 && <5
     , evm-mod
+    , base16-bytestring
     , bytestring
     , attoparsec
     , optparse-applicative
-  other-modules:
-      Paths_evm_mod
+    , text
+  other-modules: Paths_evm_mod
+    , Types
+    , Commands
   default-language: Haskell2010
 
 test-suite evm-mod-test

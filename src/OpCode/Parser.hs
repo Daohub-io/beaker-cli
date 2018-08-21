@@ -6,6 +6,8 @@ Copyright   : (c) Daolab 2018
 Functionality for parsing EVM bytecode.
 -}
 
+-- Unused do binds are common in parsers, so we will allow them.
+{-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 module OpCode.Parser where
 
 import OpCode.Type
@@ -14,17 +16,7 @@ import Prelude hiding (LT, EQ, GT)
 
 import Control.Applicative
 import Data.ByteString (pack)
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as C8
 import Data.Attoparsec.ByteString as A
-import Data.Char (isSpace)
-import Data.List as L
-import Debug.Trace
-
-import Data.Word
-import Control.Monad
-
-import Test.QuickCheck
 
 -- |Parse some bytecode. This may be full contract or not. This also accounts
 -- for Swarm metadata, which is not part of the EVM specification, but is

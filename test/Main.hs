@@ -171,11 +171,11 @@ structureParserTests = TestList
                 , XOR
                 , REVERT
                 ]
-        let parseRes = fullStructuredParse testCombo
+        let parseRes = fullStructuredParse "(test)" testCombo
         assertEqual
             "Input should be parsed and return a single protected store with the correct store range"
             (Right [ProtectedStoreCall (ll,ul)])
-            parseRes
+            (fmap (fmap sc_component) parseRes)
     , TestLabel "Protected call (full parse) plus padding" $ TestCase $ do
         let ll = 0x1
             ul = 0x2
@@ -186,7 +186,7 @@ structureParserTests = TestList
                 , REVERT
                 , SSTORE
                 ]
-        let parseRes = fullStructuredParse testCombo
+        let parseRes = fullStructuredParse "(test)" testCombo
         assertEqual
             "Input should be parsed and return a single protected store with the correct store range"
             (Right
@@ -200,7 +200,7 @@ structureParserTests = TestList
                 , OtherOpCode REVERT
                 , UnprotectedStoreCall
                 ])
-            parseRes
+            (fmap (fmap sc_component) parseRes)
     , TestLabel "Check for sequence" $ TestCase $ do
         -- In this example we want to find if the byte code as any examples
         -- where PUSH is followed directly by POP (a useless operation). We also

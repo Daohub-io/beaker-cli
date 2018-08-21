@@ -1,5 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+-- Unused do binds are common in parsers, so we will allow them.
+{-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 -- |Defines a parser for turning plain @OpCode@s into something more structured.
 module OpCode.StructureParser where
 
@@ -7,13 +9,12 @@ import Numeric.Natural
 
 import qualified Data.ByteString as B
 
-import Text.Parsec (incSourceColumn)
+import Text.Parsec (sourceColumn, incSourceColumn)
 import Text.Parsec.Error
-import Text.Parsec.Prim (tokenPrim, Stream, ParsecT, try, many, parse)
+import Text.Parsec.Prim (getPosition, tokenPrim, Stream, ParsecT, try, many, parse)
 import Text.Parsec.Combinator
 
 import OpCode.Type
-import OpCode.Utils
 
 -- |Given a predicate f, return a parser which which succeeds if f returns true
 -- on the first element.
@@ -49,28 +50,35 @@ pushVal = tokenPrim (\c -> show [c])
     (\pos c _cs -> incSourceColumn pos (fromIntegral $ nBytes c))
     (\c -> if isPush c then Just (getPushVal c) else Nothing)
 
-type ErrorAddress = Natural
 
--- |A structured set of @OpCode@s.
-data StructuredCode
-    = ProtectedStoreCall (Natural, Natural)
-    | UnprotectedStoreCall
-    | SystemCall ErrorAddress
-    | OtherOpCode OpCode
-    deriving (Show, Eq)
-
-fullStructuredParse ::[OpCode] -> Either ParseError [StructuredCode]
-fullStructuredParse code = parse (fullStructureParser <* eof) "fullStructuredParse" code
+fullStructuredParse :: FilePath -> [OpCode] -> Either ParseError [StructuredCode]
+fullStructuredParse path code = parse (fullStructureParser <* eof) path code
 
 -- |Parse a contract into structured blocks.
 fullStructureParser :: (Stream s m OpCode) => ParsecT s u m [StructuredCode]
-fullStructureParser = many (choice
-    [ ProtectedStoreCall <$> (try parseLoggedAndProtectedSSTORE)
-    , pure UnprotectedStoreCall <* (opCode SSTORE)
+fullStructureParser = many (choice $ map try
+    [ mkStructuredCode (ProtectedStoreCall <$> parseLoggedAndProtectedSSTORE)
+    , mkStructuredCode (pure UnprotectedStoreCall <* (opCode SSTORE))
     -- , StaticSystemCall <$> parseStaticSystemCall
-    , parseDynamicSystemCall
-    , OtherOpCode <$> anyOpCode
+    , mkStructuredCode parseDynamicSystemCall
+    , mkStructuredCode (OtherOpCode <$> anyOpCode)
     ])
+
+getPos :: (Stream s m OpCode) => ParsecT s u m StructuredCodeInfo
+getPos = StructuredCodeInfo <$> (sourceColumn <$> getPosition) <*> pure 0
+
+mkStructuredCode p = do
+    posStart <- getPosition
+    component <- p
+    posEnd <- getPosition
+    let
+        startColumn = sourceColumn posStart
+        endColumn = sourceColumn posEnd
+        -- columns start from one but we want an offset
+        offset  = startColumn - 1
+        size = endColumn - startColumn
+        info = StructuredCodeInfo offset size
+    pure $ StructuredCode info component
 
 -- |Parse an SSTORE call which is properly logged and protected.
 parseLoggedAndProtectedSSTORE :: (Stream s m OpCode) => ParsecT s u m (Natural, Natural)
@@ -94,7 +102,7 @@ parseLoggedAndProtectedSSTORE = do
 --     pure $ SystemCall err_addr
 
 -- |Parse a basic system call without any information about the message.
-parseDynamicSystemCall :: (Stream s m OpCode) => ParsecT s u m StructuredCode
+parseDynamicSystemCall :: (Stream s m OpCode) => ParsecT s u m StructuredCodeComponent
 parseDynamicSystemCall = do
     opCode CALLER         -- CALLER         // Get Caller
     opCode DUP1           -- DUP            // Duplicate to Stack
@@ -123,7 +131,7 @@ parseProtectStoreCallLeaveKey = do
     pure (ll, ul)
 
 -- |Parse the @OpCode@s for logging a SSTORE call.
-parseLogStoreCall :: (Stream s m OpCode) => ParsecT s u m ()
+parseLogStoreCall :: (Stream s m OpCode) => ParsecT s u m StructuredCodeComponent
 parseLogStoreCall = do
     -- Load the original values of our memory buffer onto the stack.
     opCode $ PUSH1 $ B.pack [0x60] -- 0x60
@@ -150,5 +158,6 @@ parseLogStoreCall = do
     opCode $ PUSH1 $ B.pack [0x80] -- 0x80
     opCode MSTORE
     pure ()
-    where
-        topic = keccak256Bytes "KERNEL_SSTORE"
+    pure $ StoreCallLog topic
+    -- where
+    --     topic = OpCode.Utils.keccak256Bytes "KERNEL_SSTORE"

@@ -2,12 +2,8 @@ module Check.Stores where
 
 import OpCode.StructureParser
 import OpCode.Type
-import OpCode.Utils
-import Data.ByteString (pack)
 import Numeric.Natural
 import qualified Data.Set as S
-
-import Data.List (find)
 
 import Process (countCodes)
 
@@ -19,7 +15,7 @@ data StorageRange = Any | Ranges (S.Set (Natural, Natural)) deriving (Eq, Show)
 -- |Currently just gets address ranges
 getRequiredCapabilities :: [OpCode] -> Either ParseError StorageRange
 getRequiredCapabilities code = do
-    parsed <- fullStructuredParse code
+    parsed <- fullStructuredParse "(unknown)" code
     pure $ getRequiredCapabilities' (Ranges S.empty) parsed
 
 getRequiredCapabilities'
@@ -27,10 +23,10 @@ getRequiredCapabilities'
     -> [StructuredCode] -- ^Unprocessed @StructureCode@s
     -> StorageRange
 getRequiredCapabilities' Any _ = Any
-getRequiredCapabilities' (Ranges rs) ((ProtectedStoreCall range):cs) =
+getRequiredCapabilities' (Ranges rs) ((StructuredCode _ (ProtectedStoreCall range)):cs) =
     let newRCaps = Ranges (S.insert range rs)
     in getRequiredCapabilities' newRCaps cs
-getRequiredCapabilities' rcaps (UnprotectedStoreCall:cs) = getRequiredCapabilities' Any cs
+getRequiredCapabilities' _ ((StructuredCode _ UnprotectedStoreCall):cs) = getRequiredCapabilities' Any cs
 getRequiredCapabilities' rcaps (_:cs) = getRequiredCapabilities' rcaps cs
 getRequiredCapabilities' rcaps [] = rcaps
 
@@ -38,10 +34,11 @@ getRequiredCapabilities' rcaps [] = rcaps
 -- protection.
 checkStores :: [OpCode] -> Either ParseError Bool
 checkStores code = do
-    parsed <- fullStructuredParse code
+    parsed <- fullStructuredParse "(unknown)" code
     pure $ all (not . isUnprotectedStore) parsed
 
-isUnprotectedStore UnprotectedStoreCall = True
+isUnprotectedStore :: StructuredCode -> Bool
+isUnprotectedStore (StructuredCode _ UnprotectedStoreCall) = True
 isUnprotectedStore _ = False
 
 -- |Check whether a sequence of @OpCode@s constitutes a protected SSTORE. Must
@@ -60,7 +57,7 @@ isSSTORE SSTORE = True
 isSSTORE _ = False
 
 hasSSTORE :: [OpCode] -> Bool
-hasSSTORE (SSTORE:cs) = True
+hasSSTORE (SSTORE:_) = True
 hasSSTORE (_:cs) = hasSSTORE cs
 hasSSTORE [] = False
 
@@ -95,14 +92,14 @@ hasSSTORE [] = False
 checkStaticJumps :: [OpCode] -> [(Int, FindResult)]
 checkStaticJumps opcodes = checkStaticJumps' [] (countCodes opcodes) (countCodes opcodes)
 
-checkStaticJumps' errs opcodes ((o1,c1):(o2,c2):os)
+checkStaticJumps' errs opcodes ((o1,_):(o2,c2):os)
     | (isJUMP o2 || isJUMPI o2) && (isPush o1) =
         let pushVal = getPushVal o1
             errs' = case findCount (fromIntegral pushVal) opcodes of
                 Found (JUMPDEST, _) -> errs
-                ib@(Found a) -> ((fromIntegral pushVal),(FoundButWrong a)):errs
+                (Found a) -> ((fromIntegral pushVal),(FoundButWrong a)):errs
                 ib@TooHigh -> ((fromIntegral pushVal),ib):errs -- error $ "Could not find index " ++ show pushVal ++ " at " ++ show c2 ++ ", last value " ++ show (last opcodes)
-                ib@(InBetween a b) -> ((fromIntegral pushVal),ib):errs
+                ib@(InBetween _ _) -> ((fromIntegral pushVal),ib):errs
         in  checkStaticJumps' errs' opcodes ((o2,c2):os)
     | otherwise = checkStaticJumps' errs opcodes ((o2,c2):os)
 checkStaticJumps' errs _ [_] = errs
@@ -120,7 +117,8 @@ findCount c (o1@(_,Just c1):o2@(_,Just c2):os)
     | c > c1 && c < c2 = InBetween o1 o2
     | c < c1 = error "should not occur"
     | otherwise = findCount c (o2:os)
-findCount c [_] = TooHigh
+findCount _ [_] = TooHigh
+findCount _ [] = TooHigh
 
 isJUMP JUMP = True
 isJUMP _ = False

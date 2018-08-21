@@ -4,19 +4,7 @@ import OpCode.Type
 
 import Prelude hiding (LT, EQ, GT)
 
-import Control.Applicative
 import Data.ByteString as B
-import qualified Data.ByteString.Char8 as C8
-import Data.Attoparsec.ByteString as A
--- import Data.Attoparsec.Binary
-import Data.Char (isSpace)
-import Data.List as L
-import Debug.Trace
-
-import Data.Word
-import Control.Monad
-
-import Test.QuickCheck
 
 -- |Pad out a @ByteString@ to fit into an EVM value. Throw an error if it is
 -- too large.

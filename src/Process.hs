@@ -15,16 +15,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Process where
 
-import Data.ByteString (empty, pack)
-import qualified Data.ByteString as B
-import Data.ByteString.Base16 (encode)
+import Data.ByteString (pack)
 import qualified Data.Map as Map
 import OpCode.Type
 import OpCode.Utils
 
 import Numeric.Natural
-
-import Debug.Trace
 
 -- |These are the default capabilities used for testing.
 defaultCaps :: Capabilities
@@ -64,7 +60,7 @@ countCodesAcc :: ([CountedOpCode], Integer) -> [OpCode] -> [CountedOpCode]
 countCodesAcc (counted, i) (x:xs) = countCodesAcc ((x, Just i) : counted, nextValue) xs
     where
         nextValue = i + (nBytes x)
-countCodesAcc (counted, i) [] = reverse counted
+countCodesAcc (counted, _) [] = reverse counted
 
 countVarOpCodes :: [VarOpCode] -> [(VarOpCode, Integer)]
 countVarOpCodes = countVarOpCodesAcc ([], 0)
@@ -76,7 +72,7 @@ countVarOpCodesAcc (counted, i) (x:xs) = countVarOpCodesAcc ((x, i) : counted, n
             Counted (x,_) -> i + (nBytes x)
             PushVar JumpTableDest256 -> i + 1 + 32
             PushVar JDispatch256 -> i + 1 + 32
-countVarOpCodesAcc (counted, i) [] = reverse counted
+countVarOpCodesAcc (counted, _) [] = reverse counted
 
 jumpDestinations :: [CountedOpCode] -> [Integer]
 jumpDestinations codes = foldl func [] codes where
@@ -181,7 +177,7 @@ logStoreCall =
 
 data Capabilities = Capabilities
     { caps_storageRange :: (Natural, Natural)
-    } deriving Show
+    } deriving (Eq, Show)
 
 insertProtections :: Capabilities -> [CountedOpCode] -> [CountedOpCode]
 insertProtections caps codes = codes >>= (\ccode -> case ccode of
@@ -231,14 +227,14 @@ replaceCodeCopy code = replaceCodeCopy' lastByte [] code
     where
         lastByte = sum $ map nBytes code
 
-replaceCodeCopy' lastByte acc (REVERT:JUMPDEST:(PUSH2 lengthbs):DUP1:(PUSH2 startbs):(PUSH1 memstartbs1):CODECOPY:(PUSH1 memstartbs2):RETURN:cs)
+replaceCodeCopy' lastByte acc (REVERT:JUMPDEST:(PUSH2 _{-lengthbs-}):DUP1:(PUSH2 startbs):(PUSH1 memstartbs1):CODECOPY:(PUSH1 memstartbs2):RETURN:cs)
     = (reverse newAcc) ++ cs
     where
         length = (fromIntegral lastByte) - (fromIntegral $ evm256ToInteger startbs)
         start = startbs
         newAcc = (RETURN:(PUSH1 memstartbs2):CODECOPY:(PUSH1 memstartbs1):(PUSH2 start):DUP1:(PUSH2 (integerToEVM256 length)):JUMPDEST:REVERT:acc)
 
-replaceCodeCopy' lastByte acc (REVERT:JUMPDEST:(PUSH1 lengthbs):DUP1:(PUSH2 startbs):(PUSH1 memstartbs1):CODECOPY:(PUSH1 memstartbs2):RETURN:cs)
+replaceCodeCopy' lastByte acc (REVERT:JUMPDEST:(PUSH1 _{-lengthbs-}):DUP1:(PUSH2 startbs):(PUSH1 memstartbs1):CODECOPY:(PUSH1 memstartbs2):RETURN:cs)
     = (reverse newAcc) ++ cs
     where
         length = (fromIntegral (lastByte)) - (fromIntegral $ evm256ToInteger startbs)
@@ -246,7 +242,7 @@ replaceCodeCopy' lastByte acc (REVERT:JUMPDEST:(PUSH1 lengthbs):DUP1:(PUSH2 star
         newAcc = (RETURN:(PUSH1 memstartbs2):CODECOPY:(PUSH1 memstartbs1):(PUSH2 start):DUP1:(PUSH2 (integerToEVM256 length)):JUMPDEST:REVERT:acc)
 
 replaceCodeCopy' lastByte acc (c:cs) = replaceCodeCopy' lastByte (c:acc) cs
-replaceCodeCopy' _ acc [] = error "no recognised init code"
+replaceCodeCopy' _ _ [] = error "no recognised init code"
 
 replaceJumps :: [CountedOpCode] -> [VarOpCode]
 replaceJumps codes = (codes >>= (\ccode -> case ccode of
@@ -274,8 +270,8 @@ appendJumpTable codes = (jumpTableDest, jumpDispatchDest, codes ++ table)
         jumpDispatchDest = jumpTableDest + (fromIntegral $ sum $ map nBytesVar table) - 4
 
 findCodeOffset :: [VarOpCode] -> Maybe Natural
-findCodeOffset ((Counted ((PUSH2 startbs), _)):(Counted (PUSH1 memstartbs1, _)):(Counted (CODECOPY,_)):cs) = Just $ evm256ToInteger startbs
-findCodeOffset (c:cs) = findCodeOffset cs
+findCodeOffset ((Counted ((PUSH2 startbs), _)):(Counted (PUSH1 _, _)):(Counted (CODECOPY,_)):_) = Just $ evm256ToInteger startbs
+findCodeOffset (_:cs) = findCodeOffset cs
 findCodeOffset [] = Nothing
 
 -- -- |Returns a tuple of the jump destination of the jump table and the code.
@@ -290,7 +286,7 @@ findCodeOffset [] = Nothing
 --         jumpDispatchDest = jumpTableDest + (fromIntegral $ sum $ map nBytesVar table) - 1 - 4
 
 nBytesVar (Counted (x,_)) = nBytes x
-nBytesVar (PushVar x) = 1 + 32
+nBytesVar (PushVar _) = 1 + 32
 -- add tail like
 -- pushVar tailJumpDest
 -- pop = pop()
