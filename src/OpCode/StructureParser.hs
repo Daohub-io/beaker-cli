@@ -31,7 +31,6 @@ import OpCode.Type
 -- stream.
 satisfy :: (Stream s m OpCode) => (OpCode -> Bool) -> ParsecT s u m OpCode
 satisfy f = tokenPrim (\c -> show [c])
-                -- (\pos c _cs -> updatePosChar pos c)
                 (\pos c _cs -> incSourceColumn pos (fromIntegral $ nBytes c))
                 (\c -> if f c then Just c else Nothing)
 
@@ -46,7 +45,6 @@ anyOpCode = satisfy (const True)
 -- |Parse any @PUSH1@ - @PUSH32@ value and return the value.
 pushVal :: (Stream s m OpCode) => ParsecT s u m Natural
 pushVal = tokenPrim (\c -> show [c])
-    -- (\pos c _cs -> updatePosChar pos c)
     (\pos c _cs -> incSourceColumn pos (fromIntegral $ nBytes c))
     (\c -> if isPush c then Just (getPushVal c) else Nothing)
 
@@ -105,13 +103,9 @@ parseLoggedAndProtectedSSTORE = do
 parseDynamicSystemCall :: (Stream s m OpCode) => ParsecT s u m StructuredCodeComponent
 parseDynamicSystemCall = do
     opCode CALLER         -- CALLER         // Get Caller
-    opCode DUP1           -- DUP            // Duplicate to Stack
-    opCode OpCode.Type.EQ -- EQ             // Check if Caller is Kernel Instance
-    opCode NOT            -- NOT            // If not..
-    err_addr <- pushVal   -- PUSH erraddr   // Throw “Wrong Address” error
-    opCode JUMPI          -- JUMPI          // Otherwise..
+    opCode GAS            -- GAS            // Pass through all gas
     opCode DELEGATECALL   -- DELEGATECALL   // Delegate Call to Caller
-    pure $ SystemCall err_addr
+    pure $ SystemCall
 
 -- |Parse a protected SSTORE call which leaves the storage key on the stack.
 parseProtectStoreCallLeaveKey :: (Stream s m OpCode) => ParsecT s u m (Natural, Natural)

@@ -30,7 +30,7 @@ findNonCompliances structures = reverse $ foldl' f [] structures
 -- safer to maintain. This function looks at a single element of structued code
 -- and returns a Nothing if it is compliant and a Just if it is not.
 compliance :: StructuredCode -> Maybe NonCompliance
-compliance (StructuredCode _ (SystemCall _)) = Nothing
+compliance (StructuredCode _ SystemCall) = Nothing
 compliance (StructuredCode _ (OtherOpCode STOP)) = Nothing
 compliance (StructuredCode _ (OtherOpCode ADD)) = Nothing
 compliance (StructuredCode _ (OtherOpCode MUL)) = Nothing

@@ -28,8 +28,6 @@ data NonCompliance = NonCompliance
     }
     deriving (Show, Eq)
 
-type ErrorAddress = Natural
-
 -- |A structured set of @OpCode@s.
 data StructuredCode = StructuredCode
     { sc_info :: StructuredCodeInfo
@@ -48,7 +46,7 @@ data StructuredCodeComponent
     = ProtectedStoreCall (Natural, Natural)
     | UnprotectedStoreCall
     | StoreCallLog Natural
-    | SystemCall ErrorAddress
+    | SystemCall
     | OtherOpCode OpCode
     deriving (Show, Eq)
 
