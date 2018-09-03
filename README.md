@@ -40,14 +40,14 @@ stack haddock --open .
 
 The CLI contains a number of commands. Where a contract is read from file there
 is the `--read READ-TYPE` options. `READ-TYPE` is the format of the input file.
-By default it binary (`ReadBinary`), but it can also accept hex-encoded, and
+By default it binary (`bin`), but it can also accept hex-encoded, and
 take the output from the solc compiler. The following types are accepted.
 
-* `ReadBinary`
-* `ReadHex`
-* `ReadSolC`
+* `bin`
+* `hex`
+* `solc`
 
-All of the test files in this repo currently require the `--read ReadSolC`
+All of the test files in this repo currently require the `--read solc`
 option (which is not the default).
 
 ### To Print the Opcodes

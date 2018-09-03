@@ -51,12 +51,19 @@ printStructuresCommandParser :: ParserInfo Command
 printStructuresCommandParser = info (PrintStructures <$> readOptParser <*> parseFilePath)
     (progDesc "Print structures")
 
-readOptParser = option auto
+readOptParser = option readOpt
     ( long "read"
     <> short 'r'
     <> metavar "READ_TYPE"
     <> value ReadBinary
     <> help "Type of read input" )
+
+readOpt :: ReadM ReadOpt
+readOpt = eitherReader $ \string -> case string of
+    "bin"  -> Right ReadBinary
+    "hex"  -> Right ReadHex
+    "solc" -> Right ReadSolC
+    _ -> Left "Invalid --read value"
 
 -- |Parse the "compile" command.
 compileCommandParser :: ParserInfo Command
