@@ -1,3 +1,3 @@
-# Changelog for evm-mod
+# Changelog for beaker-cli
 
 ## Unreleased changes

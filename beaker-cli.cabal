@@ -1,4 +1,4 @@
-name:           evm-mod
+name:           beaker-cli
 version:        0.1.0.0
 description:    EVM bytecode parser and modifier
 author:         Daolab
@@ -11,9 +11,9 @@ extra-source-files:
     ChangeLog.md
     README.md
 
--- source-repository head
---   type: git
---   location: https://github.com/daolab/evm-mod
+source-repository head
+  type: git
+  location: https://github.com/daolab/beaker-cli
 
 library
   hs-source-dirs:
@@ -41,7 +41,7 @@ library
       Check.JumpTable,
       Process
   other-modules:
-      Paths_evm_mod
+      Paths_beaker_cli
   default-language: Haskell2010
   ghc-options:
     -Wall
@@ -66,18 +66,18 @@ executable beaker
     -fno-warn-unused-binds
   build-depends:
       base >=4.7 && <5
-    , evm-mod
+    , beaker-cli
     , base16-bytestring
     , bytestring
     , attoparsec
     , optparse-applicative
     , text
-  other-modules: Paths_evm_mod
+  other-modules: Paths_beaker_cli
     , Types
     , Commands
   default-language: Haskell2010
 
-test-suite evm-mod-test
+test-suite beaker-cli-test
   type: exitcode-stdio-1.0
   main-is: Main.hs
   hs-source-dirs:
@@ -86,7 +86,7 @@ test-suite evm-mod-test
   build-depends:
       base >=4.7 && <5
     , attoparsec
-    , evm-mod
+    , beaker-cli
     , base16-bytestring
     , bytestring
     , containers
@@ -103,7 +103,7 @@ test-suite evm-mod-test
     , test-framework-quickcheck2
     , web3
   other-modules:
-      Paths_evm_mod,
+      Paths_beaker_cli,
       CompileSolidity,
       Models.HandWritten,
       Tests.HandleOpCodes,
@@ -126,7 +126,7 @@ test-suite os-tests
   build-depends:
       base >=4.7 && <5
     , attoparsec
-    , evm-mod
+    , beaker-cli
     , base16-bytestring
     , bytestring
     , containers
@@ -143,7 +143,7 @@ test-suite os-tests
     , test-framework-quickcheck2
     , web3
   other-modules:
-      Paths_evm_mod,
+      Paths_beaker_cli,
       CompileSolidity,
       Models.HandWritten,
       Tests.HandleOpCodes,
