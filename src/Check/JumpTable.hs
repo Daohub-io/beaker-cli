@@ -55,3 +55,4 @@ takeJumpDispatch (a:b:c:d:opcodes) =
     in if isDispatch
             then (Just (), opcodes)
             else (Nothing, opcodes)
+takeJumpDispatch opcodes = (Nothing, opcodes)

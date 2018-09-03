@@ -97,6 +97,7 @@ checkStaticJumps' errs opcodes ((o1,_):(o2,c2):os)
         let pushVal = getPushVal o1
             errs' = case findCount (fromIntegral pushVal) opcodes of
                 Found (JUMPDEST, _) -> errs
+                FoundButWrong _ -> error "should not occur"
                 (Found a) -> ((fromIntegral pushVal),(FoundButWrong a)):errs
                 ib@TooHigh -> ((fromIntegral pushVal),ib):errs -- error $ "Could not find index " ++ show pushVal ++ " at " ++ show c2 ++ ", last value " ++ show (last opcodes)
                 ib@(InBetween _ _) -> ((fromIntegral pushVal),ib):errs
@@ -110,6 +111,8 @@ data FindResult
     | FoundButWrong (OpCode, Maybe Integer)
     | InBetween (OpCode, Maybe Integer) (OpCode, Maybe Integer)
     | TooHigh deriving (Show, Eq)
+
+-- |Look though the opcodes and find the opcode at the offset
 findCount :: Integer -> [(OpCode, Maybe Integer)] -> FindResult
 findCount c (o1@(_,Just c1):o2@(_,Just c2):os)
     | c == c1 = Found o1
@@ -117,6 +120,7 @@ findCount c (o1@(_,Just c1):o2@(_,Just c2):os)
     | c > c1 && c < c2 = InBetween o1 o2
     | c < c1 = error "should not occur"
     | otherwise = findCount c (o2:os)
+findCount _ ((_,_):(_,_):_) = error "should not occur"
 findCount _ [_] = TooHigh
 findCount _ [] = TooHigh
 
