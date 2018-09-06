@@ -107,6 +107,7 @@ mainWithOpts = do
 
 tests = -- [ testGroup "Single Test" $ hUnitTestToTests storeAndGetOnChainProtected ]
     [ testGroup "Initial OS Tests" $ (hUnitTestToTests osTests)
+    , testGroup "Jumps" $ hUnitTestToTests jumpTests
     ]
 
 osTests = TestList
@@ -446,4 +447,99 @@ returnCallerCode =
     -- bytes (32-20=12)
     , PUSH1 (pack [0x0c])
     , RETURN
+    ]
+
+-- |This is a test to demonstrate that you can't jump into PUSH data
+jumpTests = TestList
+    [ TestLabel "Compliant Jump" $ TestCase $ do
+        let bytecode =
+                [ PUSH1 (pack [7])
+                , JUMP
+                , STOP
+                , PUSH1 (pack [0x5b])
+                , STOP
+                , JUMPDEST
+                , PUSH1 (pack [0xff])
+                , PUSH1 (pack [0x00])
+                , MSTORE
+                , PUSH1 (pack [0x20])
+                , PUSH1 (pack [0x00])
+                , RETURN
+                ]
+
+        let bsEncoded = B16.encode $ B.concat $ map toByteString $ makeDeployable bytecode
+        (Right sender) <- runWeb3 $ do
+            accs <- accounts
+            case accs of
+                    [] -> error "No accounts available"
+                    (a:_) -> pure a
+        (res, tx) <- deployContract sender bsEncoded
+        newContractAddress <- getContractAddress tx
+
+        (Right code) <- runWeb3 $ getCode newContractAddress Latest
+        actualRunCode <- parseGoodExample $ fst $ B16.decode $ B.drop 2 $ encodeUtf8 code
+
+        res <- runWeb3 $ do
+            accs <- accounts
+            let sender = case accs of
+                    [] -> error "No accounts available"
+                    (a:_) -> a
+            let details = Call {
+                    callFrom = Just sender,
+                    callTo = Just newContractAddress,
+                    callGas = Nothing,
+                    callGasPrice = Nothing,
+                    callValue = Nothing,
+                    callData = Nothing
+                }
+            theCall <- Eth.call details Latest
+            pure (theCall)
+        assertEqual "Code should run and return the correct value" res (Right "0x00000000000000000000000000000000000000000000000000000000000000ff")
+    , TestLabel "Non-Compliant Jump" $ TestCase $ do
+        let bytecode =
+                [ PUSH1 (pack [5])
+                , JUMP
+                , STOP
+                , PUSH1 (pack [0x5b])
+                , STOP
+                , JUMPDEST
+                , PUSH1 (pack [0xff])
+                , PUSH1 (pack [0x00])
+                , MSTORE
+                , PUSH1 (pack [0x20])
+                , PUSH1 (pack [0x00])
+                , RETURN
+                ]
+
+        let bsEncoded = B16.encode $ B.concat $ map toByteString $ makeDeployable bytecode
+        (Right sender) <- runWeb3 $ do
+            accs <- accounts
+            case accs of
+                    [] -> error "No accounts available"
+                    (a:_) -> pure a
+        (res, tx) <- deployContract sender bsEncoded
+        newContractAddress <- getContractAddress tx
+
+        (Right code) <- runWeb3 $ getCode newContractAddress Latest
+        actualRunCode <- parseGoodExample $ fst $ B16.decode $ B.drop 2 $ encodeUtf8 code
+
+        res <- runWeb3 $ do
+            accs <- accounts
+            let sender = case accs of
+                    [] -> error "No accounts available"
+                    (a:_) -> a
+            let details = Call {
+                    callFrom = Just sender,
+                    callTo = Just newContractAddress,
+                    callGas = Nothing,
+                    callGasPrice = Nothing,
+                    callValue = Nothing,
+                    callData = Nothing
+                }
+            theCall <- Eth.call details Latest
+            pure (theCall)
+        case res of
+            Right x -> error $ show x
+            Left (JsonRpcFail (RpcError {})) -> pure ()
+            _ -> error ""
     ]
