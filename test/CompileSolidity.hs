@@ -14,7 +14,6 @@ import Data.Text.Encoding
 
 data CompileType = Bin | BinRunTime deriving (Eq, Show)
 
-
 compileSolidityFileBin :: FilePath -> IO B.ByteString
 compileSolidityFileBin path = do
     text  <- compileSolidityFile Bin path
@@ -32,28 +31,26 @@ compileSolidityFile compileType path = do
     let (compileArg, ext) = case compileType of
             Bin -> ("--bin", ".binbuild")
             BinRunTime -> ("--bin-runtime", ".binrun")
-    -- check if the compiled version exists first
+    -- Check if the compiled version exists first
     let compiledPath = replaceExtension path ext
     exists <- doesFileExist compiledPath
     contents <- if exists
         then do
+            -- If it does exist, simply return that
             B.readFile compiledPath
         else do
+            -- If not, compile it and return that
             (_, Just hout, _, hndl) <-
-                createProcess (proc (joinPath ["solidity-windows", "solc.exe"]) [compileArg, path])
+                createProcess (proc (joinPath ["solc"]) [compileArg, path])
                     { std_out = CreatePipe
                     , std_err = NoStream }
             exitCode <- waitForProcess hndl
-            -- print hout
             contents <- B.hGetContents hout
             B.writeFile compiledPath contents
-            -- error $ "ehhh"
-            -- contentsErr <- B.hGetContents herr
             pure contents
     let textContent = decodeUtf8 contents
         hexCode = if length (T.lines textContent) < 4 then error (show contents) else T.filter (/= '\r') ((T.lines textContent) !! 3)
     pure $ T.filter (/= '\r') hexCode
-
 
 mangleFilename :: FilePath -> String
 mangleFilename path =

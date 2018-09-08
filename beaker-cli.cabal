@@ -75,6 +75,7 @@ executable beaker
   other-modules: Paths_beaker_cli
     , Types
     , Commands
+    , Commands.Deploy
   default-language: Haskell2010
 
 test-suite beaker-cli-test

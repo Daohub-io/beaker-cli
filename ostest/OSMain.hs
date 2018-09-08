@@ -16,6 +16,7 @@ how they will behave in the context of an operating system or kernel.
 module Main where
 
 import Control.Exception
+import Control.Monad.IO.Class
 
 import Data.Attoparsec.ByteString
 import qualified Text.Parsec.Prim as Parsec
@@ -108,6 +109,7 @@ mainWithOpts = do
 tests = -- [ testGroup "Single Test" $ hUnitTestToTests storeAndGetOnChainProtected ]
     [ testGroup "Initial OS Tests" $ (hUnitTestToTests osTests)
     , testGroup "Jumps" $ hUnitTestToTests jumpTests
+    , testGroup "Beaker Kernel" $ hUnitTestToTests beakerKernelTests
     ]
 
 osTests = TestList
@@ -543,3 +545,250 @@ jumpTests = TestList
             Left (JsonRpcFail (RpcError {})) -> pure ()
             _ -> error ""
     ]
+
+beakerKernelTests = TestList $
+    [ TestLabel "Test Beaker Kernel" $ TestCase $ do
+        -- let deployable = makeDeployable returnCallerCode
+
+        -- Get the account we will be using
+        (Right sender) <- runWeb3 $ do
+            accs <- accounts
+            case accs of
+                [] -> error "No accounts available"
+                (a:_) -> pure a
+        -- Read in the beaker kernel bytecode as hex
+        bsEncoded <- B.readFile "Kernel.bin/Kernel.bin"
+        -- Deploy the beaker kernel
+        (res, tx) <- deployContract sender bsEncoded
+        -- print res
+        -- Get the address of this deployed kernel
+        newContractAddress <- getContractAddress tx
+        (Right (res)) <- runWeb3 $ do
+            let details = (Call {
+                    callFrom = Just sender,
+                    callTo = Just newContractAddress,
+                    callGas = Nothing,
+                    callGasPrice = Nothing,
+                    callValue = Nothing,
+                    callData = Just ((JsonAbi.methodId (DFunction "testGetter" False
+                        [ ] (Just [FunctionArg "" "uint256"]))))
+                })
+            theCall <- Eth.call details Latest
+            theEffect <- Eth.sendTransaction details
+            liftIO $ print "hello"
+            pure (theCall)
+        print $ "testGetter0: " ++ show res
+        print =<< (runWeb3 $ Eth.blockNumber)
+
+        (Right (res)) <- runWeb3 $ do
+            let details = (Call {
+                    callFrom = Just sender,
+                    callTo = Just newContractAddress,
+                    callGas = Nothing,
+                    callGasPrice = Nothing,
+                    callValue = Nothing,
+                    callData = Just ((JsonAbi.methodId (DFunction "testSetter" False
+                        [ FunctionArg "value" "uint256"
+                        ] (Nothing))) <> "000000000000000000000000000000000000000000000000000000000000abcd")
+                })
+            theCall <- Eth.call details Latest
+            theEffect <- Eth.sendTransaction details
+            pure (theCall)
+        print $ "testSetter: " ++ show res
+        print =<< (runWeb3 $ Eth.blockNumber)
+
+        (Right (res)) <- runWeb3 $ do
+            let details = (Call {
+                    callFrom = Just sender,
+                    callTo = Just newContractAddress,
+                    callGas = Nothing,
+                    callGasPrice = Nothing,
+                    callValue = Nothing,
+                    callData = Just ((JsonAbi.methodId (DFunction "testGetter" False
+                        [ ] (Just [FunctionArg "" "uint256"]))))
+                })
+            theCall <- Eth.call details Latest
+            theEffect <- Eth.sendTransaction details
+            pure (theCall)
+        print $ "testGetter1: " ++ show res
+        print =<< (runWeb3 $ Eth.blockNumber)
+
+        (Right (res, length, keys)) <- runWeb3 $ do
+            let details = (Call {
+                    callFrom = Just sender,
+                    callTo = Just newContractAddress,
+                    callGas = Nothing,
+                    callGasPrice = Nothing,
+                    callValue = Nothing,
+                    callData = Just ((JsonAbi.methodId (DFunction "listProcedures" False
+                        [ ] (Just [FunctionArg "" "bytes24[]"]))))
+                })
+
+            theCall <- T.drop 2 <$> Eth.call details Latest
+            let dataPosition = T.take (2*32) theCall
+            let length = T.take (2*32) $ T.drop (2*32) theCall
+            let keys = let
+                        dat = T.drop (2*2*32) theCall
+                        l = T.length dat
+                    in map (B.takeWhile ((/=) 0x0)) $ map fst $ map B16.decode $ map encodeUtf8 $ T.chunksOf 64 dat
+            theEffect <- Eth.sendTransaction details
+            pure (theCall, length, keys)
+        print $ "listProcedures0: " ++ show res
+        print $ "listProcedures0length: " ++ show length
+        print $ "listProcedures0keys: " ++ show keys
+        print =<< (runWeb3 $ Eth.blockNumber)
+
+        let details = (Call {
+                    callFrom = Just sender,
+                    callTo = Just newContractAddress,
+                    callGas = Just 6721975,
+                    callGasPrice = Nothing,
+                    callValue = Nothing,
+                    callData = Just ((JsonAbi.methodId (DFunction "createProcedure" False
+                        [ FunctionArg "name" "bytes24"
+                        , FunctionArg "oCode" "bytes"
+                        , FunctionArg "caps" "uint256[]"
+                        --                                                                           228                             bytes24 - name                                                              offset to oCode (bytes) 3*32                                     offset  to caps (uint256[])                                      number of elements in oCode                                               oCode elements                                                                                                                                                                                                                                                                                                                                                                                                                                                 padding                                                 number of elements in caps
+                        ] (Just [FunctionArg "err" "uint8", FunctionArg "procedureAddress" "address"]))) <> "756861746f6e6500000000000000000000000000000000000000000000000000" <> "0000000000000000000000000000000000000000000000000000000000000060" <> "0000000000000000000000000000000000000000000000000000000000000180" <> "00000000000000000000000000000000000000000000000000000000000000e4" <> "608060405234801561001057600080fd5b5060c58061001f6000396000f300608060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063771602f7146044575b600080fd5b348015604f57600080fd5b5060766004803603810190808035906020019092919080359060200190929190505050608c565b6040518082815260200191505060405180910390f35b60008183019050929150505600a165627a7a7230582088508e46a4f794a86eb4a73eafdfa8cd0baf2d0c7f498c1face1fdf1307626140029" <> "00000000000000000000000000000000000000000000000000000000" <> "0000000000000000000000000000000000000000000000000000000000000000")
+                })
+        print details
+        raw <- runWeb3 $ do
+            theCall <- T.drop 2 <$> Eth.call details Latest
+            theEffect <- Eth.sendTransaction details
+            tx <- getTransactionByHash theEffect
+            txR <- getTransactionReceipt theEffect
+            let err = T.take (32*2) theCall
+                procedureAddress = T.drop ((32-20)*2) $ T.drop (32*2) $ theCall
+            pure ((err, procedureAddress), theEffect, tx, txR)
+        procedureAddress <- case raw of
+            Left e -> error $ show e
+            Right (res@(_,procedureAddress),theEffect,tx,txR) -> do
+                print $ "createProcedure: " ++ show res
+                print $ "createProcedureProcedureAddress: " ++ show procedureAddress
+                print $ "createProcedureEffect: " ++ show theEffect
+                print $ "createProcedureTx: " ++ show tx
+                print $ "createProcedureTxR: " ++ show txR
+                print =<< (runWeb3 $ Eth.blockNumber)
+                pure procedureAddress
+
+        -- Check that the code is correct
+        (Right (res)) <- runWeb3 $ getCode ((\(Right x)->x) $ Address.fromText procedureAddress) Latest
+        print $ "getCode: " ++ show res
+        print =<< (runWeb3 $ Eth.blockNumber)
+
+        (Right (res, length, keys)) <- runWeb3 $ do
+            let details = (Call {
+                    callFrom = Just sender,
+                    callTo = Just newContractAddress,
+                    callGas = Nothing,
+                    callGasPrice = Nothing,
+                    callValue = Nothing,
+                    callData = Just ((JsonAbi.methodId (DFunction "listProcedures" False
+                        [ ] (Just [FunctionArg "" "bytes24[]"]))))
+                })
+
+            theCall <- T.drop 2 <$> Eth.call details Latest
+            let dataPosition = T.take (2*32) theCall
+            let length = T.take (2*32) $ T.drop (2*32) theCall
+            let keys = let
+                        dat = T.drop (2*2*32) theCall
+                        l = T.length dat
+                    in map (B.takeWhile ((/=) 0x0)) $ map fst $ map B16.decode $ map encodeUtf8 $ T.chunksOf 64 dat
+            theEffect <- Eth.sendTransaction details
+            pure (theCall, length, keys)
+        print $ "listProcedures1: " ++ show res
+        print $ "listProcedures1length: " ++ show length
+        print $ "listProcedures1keys: " ++ show keys
+        print =<< (runWeb3 $ Eth.blockNumber)
+
+        res <- runWeb3 $ do
+            let details = (Call {
+                    callFrom = Just sender,
+                    callTo = Just ((\(Right x)->x) $ Address.fromText procedureAddress),
+                    callGas = Nothing,
+                    callGasPrice = Nothing,
+                    callValue = Nothing,
+                    callData = Just ((JsonAbi.methodId (DFunction "add" False
+                        [ FunctionArg "a" "uint256"
+                        , FunctionArg "b" "uint256"
+                        ] (Just [FunctionArg "" "uint256"]))) <> "0000000000000000000000000000000000000000000000000000000000000003" <> "0000000000000000000000000000000000000000000000000000000000000053")
+                })
+            theCall <- Eth.call details Latest
+            theEffect <- Eth.sendTransaction details
+            pure (theCall, theEffect)
+        case res of
+            Left e -> error (show e)
+            Right (theCall,theEffect) -> do
+                print $ "add: " ++ show theCall
+                print $ "addEffect: " ++ show theEffect
+                print =<< (runWeb3 $ Eth.blockNumber)
+
+        (Right (theCall,theEffect)) <- runWeb3 $ do
+            let details = (Call {
+                    callFrom = Just sender,
+                    callTo = Just newContractAddress,
+                    callGas = Nothing,
+                    callGasPrice = Nothing,
+                    callValue = Nothing,
+                    callData = Just ((JsonAbi.methodId (DFunction "getProcedure" False
+                        [ FunctionArg "name" "bytes24"
+                        ] (Just [FunctionArg "" "address"]))) <> "0000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabcd" )
+                })
+            theCall <- Eth.call details Latest
+            theEffect <- Eth.sendTransaction details
+            pure (theCall, theEffect)
+        print $ "getProcedure: " ++ show theCall
+        print $ "getProcedure: " ++ show theEffect
+        print =<< (runWeb3 $ Eth.blockNumber)
+
+        -- -- Create a kernel that calls this @returnCallerCode@ contract
+        -- let newKernelCode = customKernelCodeDELEGATECALL newContractAddress
+        --     deployableKernelCode = makeDeployable newKernelCode
+        -- -- Encode the kernel
+        -- let bsEncoded = B16.encode $ B.concat $ map toByteString deployableKernelCode
+        -- -- Deploy the kernel
+        -- (_, txK) <- deployContract sender bsEncoded
+        -- -- Retrieve the kernel address
+        -- kernelAddress <- getContractAddress txK
+
+        -- (Right code) <- runWeb3 $ getCode kernelAddress Latest
+        -- actualRunCode <- parseGoodExample $ fst $ B16.decode $ B.drop 2 $ encodeUtf8 code
+
+        -- -- Call the kernel (which in turn calls the contract)
+        -- (Right result) <- retrieveCaller kernelAddress
+
+        -- assertEqual "The caller should equal the sender" ("0x" <> Address.toText sender) result
+        (Right (res)) <- runWeb3 $ do
+            let details = (Call {
+                    callFrom = Just sender,
+                    callTo = Just newContractAddress,
+                    callGas = Nothing,
+                    callGasPrice = Nothing,
+                    callValue = Nothing,
+                    callData = Just ((JsonAbi.methodId (DFunction "listProcedures" False
+                        [ ] (Just [FunctionArg "" "bytes24[]"]))))
+                })
+
+            theCall <- Eth.call details Latest
+            theEffect <- Eth.sendTransaction details
+            pure (theCall)
+        print $ "listProcedures: " ++ show res
+        print =<< (runWeb3 $ Eth.blockNumber)
+        pure ()
+    ]
+    where
+        retrieveCaller newContractAddress = runWeb3 $ do
+            accs <- accounts
+            let sender = case accs of
+                    [] -> error "No accounts available"
+                    (a:_) -> a
+            let details = Call {
+                    callFrom = Just sender,
+                    callTo = Just newContractAddress,
+                    callGas = Nothing,
+                    callGasPrice = Nothing,
+                    callValue = Nothing,
+                    callData = Nothing
+                }
+            theCall <- Eth.call details Latest -- TODO: switch back to using this for the result
+            pure (theCall)
