@@ -17,6 +17,7 @@ module Main where
 
 import Control.Exception
 import Control.Monad.IO.Class
+import Control.Concurrent (threadDelay)
 
 import Data.Attoparsec.ByteString
 import qualified Text.Parsec.Prim as Parsec
@@ -171,7 +172,7 @@ trivialOnChain = TestLabel "Trivial on chain" $ TestCase $ do
         newContractAddress <- getContractAddress tx
 
         (Right code) <- runWeb3 $ getCode newContractAddress Latest
-        actualRunCode <- parseGoodExample $ fst $ B16.decode $ B.drop 2 $ encodeUtf8 code
+        actualRunCode <- parseGoodExample $ hexToBytes $ T.drop 2 code
         pure ()
 
 -- |Deploy a trivial example of a contract on chain and check that the code on
@@ -191,7 +192,7 @@ trivialOnChainAutoDeploy = TestLabel "Trivial on chain auto-deploy" $ TestCase $
     newContractAddress <- getContractAddress tx
 
     (Right code) <- runWeb3 $ getCode newContractAddress Latest
-    actualRunCode <- parseGoodExample $ fst $ B16.decode $ B.drop 2 $ encodeUtf8 code
+    actualRunCode <- parseGoodExample $ hexToBytes $ T.drop 2 code
     assertEqual "Actual run code should be the same as initial code" kernelCode actualRunCode
     pure ()
 
@@ -207,10 +208,11 @@ testCaller = TestLabel "Test Caller" $ TestCase $ do
                 [] -> error "No accounts available"
                 (a:_) -> pure a
     (res, tx) <- deployContract sender bsEncoded
+    t <- runWeb3 $ blockingGetTransactionByHash tx
     newContractAddress <- getContractAddress tx
 
     (Right code) <- runWeb3 $ getCode newContractAddress Latest
-    actualRunCode <- parseGoodExample $ fst $ B16.decode $ B.drop 2 $ encodeUtf8 code
+    actualRunCode <- parseGoodExample $ hexToBytes $ T.drop 2 code
     (Right result) <- retrieveCaller newContractAddress
     (Right sender) <-  runWeb3 $ do
         accs <- accounts
@@ -273,7 +275,7 @@ testKernelCallerDELEGATECALL = TestLabel "Test Kernel Caller (DELEGATECALL)" $ T
     kernelAddress <- getContractAddress txK
 
     (Right code) <- runWeb3 $ getCode kernelAddress Latest
-    actualRunCode <- parseGoodExample $ fst $ B16.decode $ B.drop 2 $ encodeUtf8 code
+    actualRunCode <- parseGoodExample $ hexToBytes $ T.drop 2 code
 
     -- Call the kernel (which in turn calls the contract)
     (Right result) <- retrieveCaller kernelAddress
@@ -333,7 +335,7 @@ testKernelCallerCALLCODE = TestLabel "Test Kernel Caller (CALLCODE)" $ TestCase 
     kernelAddress <- getContractAddress txK
 
     (Right code) <- runWeb3 $ getCode kernelAddress Latest
-    actualRunCode <- parseGoodExample $ fst $ B16.decode $ B.drop 2 $ encodeUtf8 code
+    actualRunCode <- parseGoodExample $ hexToBytes $ T.drop 2 code
 
     -- Call the kernel (which in turn calls the contract)
     (Right result) <- retrieveCaller kernelAddress
@@ -479,7 +481,7 @@ jumpTests = TestList
         newContractAddress <- getContractAddress tx
 
         (Right code) <- runWeb3 $ getCode newContractAddress Latest
-        actualRunCode <- parseGoodExample $ fst $ B16.decode $ B.drop 2 $ encodeUtf8 code
+        actualRunCode <- parseGoodExample $ hexToBytes $ T.drop 2 code
 
         res <- runWeb3 $ do
             accs <- accounts
@@ -523,7 +525,7 @@ jumpTests = TestList
         newContractAddress <- getContractAddress tx
 
         (Right code) <- runWeb3 $ getCode newContractAddress Latest
-        actualRunCode <- parseGoodExample $ fst $ B16.decode $ B.drop 2 $ encodeUtf8 code
+        actualRunCode <- parseGoodExample $ hexToBytes $ T.drop 2 code
 
         res <- runWeb3 $ do
             accs <- accounts
@@ -558,11 +560,11 @@ beakerKernelTests = TestList $
                 (a:_) -> pure a
         -- Read in the beaker kernel bytecode as hex
         bsEncoded <- B.readFile "Kernel.bin/Kernel.bin"
+        -- print bsEncoded
         -- Deploy the beaker kernel
-        (res, tx) <- deployContract sender bsEncoded
-        -- print res
+        (Right (res, txH, tx, txR)) <- runWeb3 $ deployContract' sender bsEncoded
         -- Get the address of this deployed kernel
-        newContractAddress <- getContractAddress tx
+        Right (Just newContractAddress) <- runWeb3 $ getContractAddress' txH
         (Right (res)) <- runWeb3 $ do
             let details = (Call {
                     callFrom = Just sender,
@@ -575,12 +577,10 @@ beakerKernelTests = TestList $
                 })
             theCall <- Eth.call details Latest
             theEffect <- Eth.sendTransaction details
-            liftIO $ print "hello"
             pure (theCall)
-        print $ "testGetter0: " ++ show res
-        print =<< (runWeb3 $ Eth.blockNumber)
+        assertEqual "The value from testGetter should be 3" (read $ T.unpack res) 3
 
-        (Right (res)) <- runWeb3 $ do
+        r <- runWeb3 $ do
             let details = (Call {
                     callFrom = Just sender,
                     callTo = Just newContractAddress,
@@ -594,8 +594,13 @@ beakerKernelTests = TestList $
             theCall <- Eth.call details Latest
             theEffect <- Eth.sendTransaction details
             pure (theCall)
-        print $ "testSetter: " ++ show res
-        print =<< (runWeb3 $ Eth.blockNumber)
+        case r of
+            Left e -> assertFailure "testSetter should not fail"
+            Right res -> do
+                -- TODO:  what should this value be?
+                -- print $ "testSetter: " ++ show res
+                -- print =<< (runWeb3 $ Eth.blockNumber)
+                pure ()
 
         (Right (res)) <- runWeb3 $ do
             let details = (Call {
@@ -610,10 +615,9 @@ beakerKernelTests = TestList $
             theCall <- Eth.call details Latest
             theEffect <- Eth.sendTransaction details
             pure (theCall)
-        print $ "testGetter1: " ++ show res
-        print =<< (runWeb3 $ Eth.blockNumber)
+        assertEqual "The value from testGetter should be 0xabcd" (read $ T.unpack res) 0xabce
 
-        (Right (res, length, keys)) <- runWeb3 $ do
+        (Right (res, keys)) <- runWeb3 $ do
             let details = (Call {
                     callFrom = Just sender,
                     callTo = Just newContractAddress,
@@ -623,20 +627,12 @@ beakerKernelTests = TestList $
                     callData = Just ((JsonAbi.methodId (DFunction "listProcedures" False
                         [ ] (Just [FunctionArg "" "bytes24[]"]))))
                 })
-
             theCall <- T.drop 2 <$> Eth.call details Latest
-            let dataPosition = T.take (2*32) theCall
-            let length = T.take (2*32) $ T.drop (2*32) theCall
-            let keys = let
-                        dat = T.drop (2*2*32) theCall
-                        l = T.length dat
-                    in map (B.takeWhile ((/=) 0x0)) $ map fst $ map B16.decode $ map encodeUtf8 $ T.chunksOf 64 dat
+            let keys = parseProcs theCall
             theEffect <- Eth.sendTransaction details
-            pure (theCall, length, keys)
-        print $ "listProcedures0: " ++ show res
-        print $ "listProcedures0length: " ++ show length
-        print $ "listProcedures0keys: " ++ show keys
-        print =<< (runWeb3 $ Eth.blockNumber)
+            pure (theCall, keys)
+        assertEqual "There should be zero key/procedure" (length keys) 0
+        assertEqual "The keys should be correct" keys  []
 
         let details = (Call {
                     callFrom = Just sender,
@@ -651,32 +647,35 @@ beakerKernelTests = TestList $
                         --                                                                           228                             bytes24 - name                                                              offset to oCode (bytes) 3*32                                     offset  to caps (uint256[])                                      number of elements in oCode                                               oCode elements                                                                                                                                                                                                                                                                                                                                                                                                                                                 padding                                                 number of elements in caps
                         ] (Just [FunctionArg "err" "uint8", FunctionArg "procedureAddress" "address"]))) <> "756861746f6e6500000000000000000000000000000000000000000000000000" <> "0000000000000000000000000000000000000000000000000000000000000060" <> "0000000000000000000000000000000000000000000000000000000000000180" <> "00000000000000000000000000000000000000000000000000000000000000e4" <> "608060405234801561001057600080fd5b5060c58061001f6000396000f300608060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063771602f7146044575b600080fd5b348015604f57600080fd5b5060766004803603810190808035906020019092919080359060200190929190505050608c565b6040518082815260200191505060405180910390f35b60008183019050929150505600a165627a7a7230582088508e46a4f794a86eb4a73eafdfa8cd0baf2d0c7f498c1face1fdf1307626140029" <> "00000000000000000000000000000000000000000000000000000000" <> "0000000000000000000000000000000000000000000000000000000000000000")
                 })
-        print details
         raw <- runWeb3 $ do
             theCall <- T.drop 2 <$> Eth.call details Latest
             theEffect <- Eth.sendTransaction details
-            tx <- getTransactionByHash theEffect
-            txR <- getTransactionReceipt theEffect
+            tx <- blockingGetTransactionByHash theEffect
+            txR <- blockingGetTransactionReceipt theEffect
             let err = T.take (32*2) theCall
                 procedureAddress = T.drop ((32-20)*2) $ T.drop (32*2) $ theCall
             pure ((err, procedureAddress), theEffect, tx, txR)
         procedureAddress <- case raw of
             Left e -> error $ show e
-            Right (res@(_,procedureAddress),theEffect,tx,txR) -> do
-                print $ "createProcedure: " ++ show res
-                print $ "createProcedureProcedureAddress: " ++ show procedureAddress
-                print $ "createProcedureEffect: " ++ show theEffect
-                print $ "createProcedureTx: " ++ show tx
-                print $ "createProcedureTxR: " ++ show txR
-                print =<< (runWeb3 $ Eth.blockNumber)
+            Right (res@(_,procedureAddressRaw),theEffect,tx,txR) -> do
+                procedureAddress = case Address.fromText procedureAddressRaw of
+                        Left e -> assertFailure ("procedureAddress was not retrieved: " ++ show e)
+                        Right addr -> addr
+                assertBool "is a valid address" (procedureAddress /= Address.zero)
+                -- print $ "createProcedure: " ++ show res
+                -- print $ "createProcedureProcedureAddress: " ++ show procedureAddress
+                -- print $ "createProcedureEffect: " ++ show theEffect
+                -- print $ "createProcedureTx: " ++ show tx
+                -- print $ "createProcedureTxR: " ++ show txR
+                -- print =<< (runWeb3 $ Eth.blockNumber)
                 pure procedureAddress
 
         -- Check that the code is correct
         (Right (res)) <- runWeb3 $ getCode ((\(Right x)->x) $ Address.fromText procedureAddress) Latest
-        print $ "getCode: " ++ show res
-        print =<< (runWeb3 $ Eth.blockNumber)
+        -- print $ "getCode: " ++ show res
+        -- print =<< (runWeb3 $ Eth.blockNumber)
 
-        (Right (res, length, keys)) <- runWeb3 $ do
+        (Right (res, keys)) <- runWeb3 $ do
             let details = (Call {
                     callFrom = Just sender,
                     callTo = Just newContractAddress,
@@ -686,25 +685,17 @@ beakerKernelTests = TestList $
                     callData = Just ((JsonAbi.methodId (DFunction "listProcedures" False
                         [ ] (Just [FunctionArg "" "bytes24[]"]))))
                 })
-
             theCall <- T.drop 2 <$> Eth.call details Latest
-            let dataPosition = T.take (2*32) theCall
-            let length = T.take (2*32) $ T.drop (2*32) theCall
-            let keys = let
-                        dat = T.drop (2*2*32) theCall
-                        l = T.length dat
-                    in map (B.takeWhile ((/=) 0x0)) $ map fst $ map B16.decode $ map encodeUtf8 $ T.chunksOf 64 dat
+            let keys = parseProcs theCall
             theEffect <- Eth.sendTransaction details
-            pure (theCall, length, keys)
-        print $ "listProcedures1: " ++ show res
-        print $ "listProcedures1length: " ++ show length
-        print $ "listProcedures1keys: " ++ show keys
-        print =<< (runWeb3 $ Eth.blockNumber)
+            pure (theCall, keys)
+        assertEqual "There should be one key/procedure" (length keys) 1
+        assertEqual "The keys should be correct" keys  ["uhatone"]
 
         res <- runWeb3 $ do
             let details = (Call {
                     callFrom = Just sender,
-                    callTo = Just ((\(Right x)->x) $ Address.fromText procedureAddress),
+                    callTo = Just procedureAddress,
                     callGas = Nothing,
                     callGasPrice = Nothing,
                     callValue = Nothing,
@@ -717,11 +708,13 @@ beakerKernelTests = TestList $
             theEffect <- Eth.sendTransaction details
             pure (theCall, theEffect)
         case res of
-            Left e -> error (show e)
+            Left e -> assertFailure "Calling add should succeed"
             Right (theCall,theEffect) -> do
-                print $ "add: " ++ show theCall
-                print $ "addEffect: " ++ show theEffect
-                print =<< (runWeb3 $ Eth.blockNumber)
+                assertEqual "The value from add should be 0x56" (read $ T.unpack theCall) 0x56
+                -- print $ "add: " ++ show theCall
+                -- print $ "addEffect: " ++ show theEffect
+                -- print =<< (runWeb3 $ Eth.blockNumber)
+                pure ()
 
         (Right (theCall,theEffect)) <- runWeb3 $ do
             let details = (Call {
@@ -737,9 +730,10 @@ beakerKernelTests = TestList $
             theCall <- Eth.call details Latest
             theEffect <- Eth.sendTransaction details
             pure (theCall, theEffect)
-        print $ "getProcedure: " ++ show theCall
-        print $ "getProcedure: " ++ show theEffect
-        print =<< (runWeb3 $ Eth.blockNumber)
+        -- print $ "getProcedure: " ++ show theCall
+        -- print $ "getProcedure: " ++ show theEffect
+        -- print =<< (runWeb3 $ Eth.blockNumber)
+        pure ()
 
         -- -- Create a kernel that calls this @returnCallerCode@ contract
         -- let newKernelCode = customKernelCodeDELEGATECALL newContractAddress
@@ -752,7 +746,7 @@ beakerKernelTests = TestList $
         -- kernelAddress <- getContractAddress txK
 
         -- (Right code) <- runWeb3 $ getCode kernelAddress Latest
-        -- actualRunCode <- parseGoodExample $ fst $ B16.decode $ B.drop 2 $ encodeUtf8 code
+        -- actualRunCode <- parseGoodExample $ hexToBytes $ T.drop 2 code
 
         -- -- Call the kernel (which in turn calls the contract)
         -- (Right result) <- retrieveCaller kernelAddress
@@ -772,8 +766,8 @@ beakerKernelTests = TestList $
             theCall <- Eth.call details Latest
             theEffect <- Eth.sendTransaction details
             pure (theCall)
-        print $ "listProcedures: " ++ show res
-        print =<< (runWeb3 $ Eth.blockNumber)
+        -- print $ "listProcedures: " ++ show res
+        -- print =<< (runWeb3 $ Eth.blockNumber)
         pure ()
     ]
     where
@@ -792,3 +786,5 @@ beakerKernelTests = TestList $
                 }
             theCall <- Eth.call details Latest -- TODO: switch back to using this for the result
             pure (theCall)
+
+hexToBytes = fst . B16.decode . encodeUtf8

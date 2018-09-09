@@ -1,7 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Tests.Utils where
 
+import Control.Concurrent (threadDelay)
 import Control.Exception
+import Control.Monad.IO.Class
 
 import Data.Attoparsec.ByteString
 import Data.ByteString (pack)
@@ -87,8 +89,8 @@ deployContractDefault bsEncoded = do
     let sender = case accs of
             [] -> error "No accounts available"
             (a:_) -> a
-    (res, tx) <- deployContract' sender bsEncoded
-    newContractAddressRaw <- getContractAddress' tx
+    (res, txH, tx, txR) <- deployContract' sender bsEncoded
+    newContractAddressRaw <- getContractAddress' txH
     let newContractAddress = case newContractAddressRaw of
             Nothing -> error "contract no successfully deployed"
             Just x -> x
@@ -113,7 +115,8 @@ deployContract sender bsEncoded =  do
         Left e -> assertFailure $ show e
         Right x -> pure x
 
-deployContract' sender bsEncoded =do
+-- deployContract' :: Address -> B.ByteString -> Web3 (Text, Text, Maybe Transaction, TxReceipt)
+deployContract' sender bsEncoded = do
     let details = Call {
             callFrom = Just sender,
             callTo = Nothing,
@@ -123,12 +126,19 @@ deployContract' sender bsEncoded =do
             callData = Just (T.pack $ C8.unpack $ "0x" `B.append` bsEncoded)
         }
     theCall <- Eth.call details Latest
-    theEffect <- Eth.sendTransaction details
-    pure (theCall, theEffect)
+    -- liftIO $ print theCall
+    txHash <- Eth.sendTransaction details
+    -- liftIO $ print txHash
+    -- TODO: wait for the transaction to be available
+    tx <- blockingGetTransactionByHash txHash
+    -- liftIO $ print tx
+    txR <- blockingGetTransactionReceipt txHash
+    -- liftIO $ print txR
+    pure (theCall, txHash, tx, txR)
 
 getContractAddress tx = do
     contractAddressResult <- runWeb3 $ do
-        r <- getTransactionReceipt tx
+        r <- blockingGetTransactionReceipt tx
         pure $ txrContractAddress r
     case contractAddressResult of
             Left e -> assertFailure ("ss" ++ show e)
@@ -136,8 +146,8 @@ getContractAddress tx = do
             Right Nothing -> assertFailure "No new contract address was returned"
 
 getContractAddress' tx = do
-        r <- getTransactionReceipt tx
-        pure $ txrContractAddress r
+    r <- blockingGetTransactionReceipt tx
+    pure $ txrContractAddress r
 
 getAllLogs :: Address -> Web3 [Change]
 getAllLogs contractAddress = do
@@ -169,3 +179,26 @@ checkStorageLog expectedContractAddress expectedStorageKey log = do
     assertEqual "Log address should be correct" expectedContractAddress (changeAddress log)
     assertEqual "Log data address should be correct" expectedContractAddress logContractAddress
     assertEqual "Log data storage key should be correct" expectedStorageKey logStorageKey
+
+blockingGetTransactionByHash txHash = do
+    liftIO $ threadDelay 1000000
+    r <- getTransactionByHash txHash
+    case r of
+        Nothing -> blockingGetTransactionByHash txHash
+        Just x -> pure x
+
+blockingGetTransactionReceipt txHash = do
+    liftIO $ threadDelay 1000000
+    r <- getTransactionReceipt txHash
+    case r of
+        Nothing -> blockingGetTransactionReceipt txHash
+        Just x -> pure x
+
+parseProcs theCall =
+    let dataPosition = T.take (2*32) theCall
+        length = T.take (2*32) $ T.drop (2*32) theCall
+        keys = let
+                dat = T.drop (2*2*32) theCall
+                l = T.length dat
+            in map (B.takeWhile ((/=) 0x0)) $ map fst $ map B16.decode $ map encodeUtf8 $ T.chunksOf 64 dat
+    in keys
