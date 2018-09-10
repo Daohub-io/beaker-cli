@@ -13,6 +13,7 @@ how they will behave in the context of an operating system or kernel.
 -}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE LambdaCase #-}
 module Main where
 
 import Control.Exception
@@ -72,6 +73,8 @@ import System.FilePath
 import System.Process
 import System.IO.Temp
 
+import Text.Printf
+
 -- Import code for parsing opcodes and all low level data handling.
 import Tests.HandleOpCodes
 -- Import code that can analyse the opcodes and perform tests and checks
@@ -107,7 +110,7 @@ mainWithOpts = do
 
     defaultMainWithOpts tests my_runner_opts
 
-tests = -- [ testGroup "Single Test" $ hUnitTestToTests storeAndGetOnChainProtected ]
+tests =
     [ testGroup "Initial OS Tests" $ (hUnitTestToTests osTests)
     , testGroup "Jumps" $ hUnitTestToTests jumpTests
     , testGroup "Beaker Kernel" $ hUnitTestToTests beakerKernelTests
@@ -168,8 +171,11 @@ trivialOnChain = TestLabel "Trivial on chain" $ TestCase $ do
             case accs of
                     [] -> error "No accounts available"
                     (a:_) -> pure a
+        print "about to deploy"
         (res, tx) <- deployContract sender bsEncoded
+        print "deployed"
         newContractAddress <- getContractAddress tx
+        print "found address"
 
         (Right code) <- runWeb3 $ getCode newContractAddress Latest
         actualRunCode <- parseGoodExample $ hexToBytes $ T.drop 2 code
@@ -193,7 +199,10 @@ trivialOnChainAutoDeploy = TestLabel "Trivial on chain auto-deploy" $ TestCase $
 
     (Right code) <- runWeb3 $ getCode newContractAddress Latest
     actualRunCode <- parseGoodExample $ hexToBytes $ T.drop 2 code
-    assertEqual "Actual run code should be the same as initial code" kernelCode actualRunCode
+    assertEqual
+        "Actual run code should be the same as initial code"
+        kernelCode
+        actualRunCode
     pure ()
 
 -- |This deploys and runs the @returnCallerCode@ contract, and tests that it
@@ -220,7 +229,10 @@ testCaller = TestLabel "Test Caller" $ TestCase $ do
                 [] -> error "No accounts available"
                 (a:_) -> a
         pure sender
-    assertEqual "The caller should equal the sender" ("0x" <> Address.toText sender) result
+    assertEqual
+        "The caller should equal the sender"
+        ("0x" <> Address.toText sender)
+        result
     pure ()
     where
         retrieveCaller newContractAddress = runWeb3 $ do
@@ -236,7 +248,7 @@ testCaller = TestLabel "Test Caller" $ TestCase $ do
                     callValue = Nothing,
                     callData = Nothing
                 }
-            theCall <- Eth.call details Latest -- TODO: switch back to using this for the result
+            theCall <- Eth.call details Latest
             pure (theCall)
 
 -- |This:
@@ -296,7 +308,7 @@ testKernelCallerDELEGATECALL = TestLabel "Test Kernel Caller (DELEGATECALL)" $ T
                     callValue = Nothing,
                     callData = Nothing
                 }
-            theCall <- Eth.call details Latest -- TODO: switch back to using this for the result
+            theCall <- Eth.call details Latest
             pure (theCall)
 
 -- |This:
@@ -339,7 +351,10 @@ testKernelCallerCALLCODE = TestLabel "Test Kernel Caller (CALLCODE)" $ TestCase 
 
     -- Call the kernel (which in turn calls the contract)
     (Right result) <- retrieveCaller kernelAddress
-    assertEqual "The caller should equal the kernel" ("0x" <> Address.toText kernelAddress) result
+    assertEqual
+        "The caller should equal the kernel"
+        ("0x" <> Address.toText kernelAddress)
+        result
     pure ()
     where
         retrieveCaller newContractAddress = runWeb3 $ do
@@ -355,7 +370,7 @@ testKernelCallerCALLCODE = TestLabel "Test Kernel Caller (CALLCODE)" $ TestCase 
                     callValue = Nothing,
                     callData = Nothing
                 }
-            theCall <- Eth.call details Latest -- TODO: switch back to using this for the result
+            theCall <- Eth.call details Latest
             pure (theCall)
 
 -- |Take bytecode in a deployed format and make it deployable with no
@@ -498,7 +513,10 @@ jumpTests = TestList
                 }
             theCall <- Eth.call details Latest
             pure (theCall)
-        assertEqual "Code should run and return the correct value" res (Right "0x00000000000000000000000000000000000000000000000000000000000000ff")
+        assertEqual
+            "Code should run and return the correct value"
+            (Right "0x00000000000000000000000000000000000000000000000000000000000000ff")
+            res
     , TestLabel "Non-Compliant Jump" $ TestCase $ do
         let bytecode =
                 [ PUSH1 (pack [5])
@@ -550,8 +568,6 @@ jumpTests = TestList
 
 beakerKernelTests = TestList $
     [ TestLabel "Test Beaker Kernel" $ TestCase $ do
-        -- let deployable = makeDeployable returnCallerCode
-
         -- Get the account we will be using
         (Right sender) <- runWeb3 $ do
             accs <- accounts
@@ -560,11 +576,19 @@ beakerKernelTests = TestList $
                 (a:_) -> pure a
         -- Read in the beaker kernel bytecode as hex
         bsEncoded <- B.readFile "Kernel.bin/Kernel.bin"
-        -- print bsEncoded
+        bsEncodedRuntime <- B.readFile "Kernel.bin/Kernel.bin-runtime"
         -- Deploy the beaker kernel
         (Right (res, txH, tx, txR)) <- runWeb3 $ deployContract' sender bsEncoded
         -- Get the address of this deployed kernel
         Right (Just newContractAddress) <- runWeb3 $ getContractAddress' txH
+        -- Check the code of the kernel correct
+        (runWeb3 $ getCode newContractAddress Latest) >>= \case
+            Left e -> assertFailure "Kernel getCode should succeed"
+            Right code -> assertEqual
+                "The deployed kernel code should be correct"
+                (T.pack $ C8.unpack $ "0x" `B.append` bsEncodedRuntime)
+                code
+
         (Right (res)) <- runWeb3 $ do
             let details = (Call {
                     callFrom = Just sender,
@@ -578,7 +602,7 @@ beakerKernelTests = TestList $
             theCall <- Eth.call details Latest
             theEffect <- Eth.sendTransaction details
             pure (theCall)
-        assertEqual "The value from testGetter should be 3" (read $ T.unpack res) 3
+        assertEqual "The value from testGetter should be 3" 3 (read $ T.unpack res)
 
         r <- runWeb3 $ do
             let details = (Call {
@@ -593,13 +617,14 @@ beakerKernelTests = TestList $
                 })
             theCall <- Eth.call details Latest
             theEffect <- Eth.sendTransaction details
-            pure (theCall)
+            pure (theCall, theEffect)
         case r of
             Left e -> assertFailure "testSetter should not fail"
-            Right res -> do
-                -- TODO:  what should this value be?
-                -- print $ "testSetter: " ++ show res
-                -- print =<< (runWeb3 $ Eth.blockNumber)
+            Right (theCall, txHash) -> do
+                Right tx <- runWeb3 $ blockingGetTransactionByHash txHash
+                Right txR <- runWeb3 $ blockingGetTransactionReceipt txHash
+                -- print txR
+                assertEqual "Status of testSetter trx receipt should be 0x1" 0x1 (read $ T.unpack $ txrStatus txR)
                 pure ()
 
         (Right (res)) <- runWeb3 $ do
@@ -615,7 +640,8 @@ beakerKernelTests = TestList $
             theCall <- Eth.call details Latest
             theEffect <- Eth.sendTransaction details
             pure (theCall)
-        assertEqual "The value from testGetter should be 0xabcd" (read $ T.unpack res) 0xabce
+        -- print res
+        assertEqual "The value from testGetter should be 0xabcd" 0xabcd (read $ T.unpack res)
 
         (Right (res, keys)) <- runWeb3 $ do
             let details = (Call {
@@ -634,18 +660,29 @@ beakerKernelTests = TestList $
         assertEqual "There should be zero key/procedure" (length keys) 0
         assertEqual "The keys should be correct" keys  []
 
-        let details = (Call {
+        bsEncoded <- B.readFile "test/Models/Adder.hexbinbuild"
+        bsEncodedRuntime <- B.readFile "test/Models/Adder.hexbinrun"
+        let
+            oCode = (T.pack $ C8.unpack bsEncoded)
+            oCodePaddingLength = 64 - (T.length oCode `mod` 64)
+            paddedOCode = oCode <> T.replicate oCodePaddingLength "0"
+            nElementsInCode = T.pack $ printf "%x" $ T.length oCode `div` 2 :: Text
+            elementsInOCode = T.replicate (64 - (T.length nElementsInCode `mod` 64)) "0" <> nElementsInCode
+            oCodeOffset = (T.length (elementsInOCode <> paddedOCode) `div` 2) + 0x60
+            oCodeOffsetText = T.pack $ printf "%x" oCodeOffset :: Text
+            oCodeOffsetTextPadded = T.replicate (64 - (T.length oCodeOffsetText `mod` 64)) "0" <> oCodeOffsetText
+            details = (Call {
                     callFrom = Just sender,
                     callTo = Just newContractAddress,
-                    callGas = Just 6721975,
+                    callGas = Nothing,
                     callGasPrice = Nothing,
                     callValue = Nothing,
                     callData = Just ((JsonAbi.methodId (DFunction "createProcedure" False
                         [ FunctionArg "name" "bytes24"
                         , FunctionArg "oCode" "bytes"
                         , FunctionArg "caps" "uint256[]"
-                        --                                                                           228                             bytes24 - name                                                              offset to oCode (bytes) 3*32                                     offset  to caps (uint256[])                                      number of elements in oCode                                               oCode elements                                                                                                                                                                                                                                                                                                                                                                                                                                                 padding                                                 number of elements in caps
-                        ] (Just [FunctionArg "err" "uint8", FunctionArg "procedureAddress" "address"]))) <> "756861746f6e6500000000000000000000000000000000000000000000000000" <> "0000000000000000000000000000000000000000000000000000000000000060" <> "0000000000000000000000000000000000000000000000000000000000000180" <> "00000000000000000000000000000000000000000000000000000000000000e4" <> "608060405234801561001057600080fd5b5060c58061001f6000396000f300608060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063771602f7146044575b600080fd5b348015604f57600080fd5b5060766004803603810190808035906020019092919080359060200190929190505050608c565b6040518082815260200191505060405180910390f35b60008183019050929150505600a165627a7a7230582088508e46a4f794a86eb4a73eafdfa8cd0baf2d0c7f498c1face1fdf1307626140029" <> "00000000000000000000000000000000000000000000000000000000" <> "0000000000000000000000000000000000000000000000000000000000000000")
+                        --                                                                           228                             bytes24 - name                                                              offset to oCode (bytes) 3*32                                     offset  to caps (uint256[])                                      number of elements in oCode                                               number of cap elements                                                                                                                                                                                                                                                                                                                                                                                                                                                 padding                                                 number of elements in caps
+                        ] (Just [FunctionArg "err" "uint8", FunctionArg "procedureAddress" "address"]))) <> "756861746f6e6500000000000000000000000000000000000000000000000000" <> "0000000000000000000000000000000000000000000000000000000000000060" <> oCodeOffsetTextPadded <> elementsInOCode <> paddedOCode <> "0000000000000000000000000000000000000000000000000000000000000000")
                 })
         raw <- runWeb3 $ do
             theCall <- T.drop 2 <$> Eth.call details Latest
@@ -658,22 +695,22 @@ beakerKernelTests = TestList $
         procedureAddress <- case raw of
             Left e -> error $ show e
             Right (res@(_,procedureAddressRaw),theEffect,tx,txR) -> do
-                procedureAddress = case Address.fromText procedureAddressRaw of
+                procedureAddress <- case Address.fromText procedureAddressRaw of
                         Left e -> assertFailure ("procedureAddress was not retrieved: " ++ show e)
-                        Right addr -> addr
-                assertBool "is a valid address" (procedureAddress /= Address.zero)
-                -- print $ "createProcedure: " ++ show res
-                -- print $ "createProcedureProcedureAddress: " ++ show procedureAddress
-                -- print $ "createProcedureEffect: " ++ show theEffect
-                -- print $ "createProcedureTx: " ++ show tx
-                -- print $ "createProcedureTxR: " ++ show txR
-                -- print =<< (runWeb3 $ Eth.blockNumber)
+                        Right addr -> pure addr
+                if (procedureAddress /= Address.zero)
+                    then do
+                        -- print tx
+                        -- print txR
+                        assertBool
+                            "is a valid address"
+                            (procedureAddress /= Address.zero)
+                    else pure ()
                 pure procedureAddress
 
         -- Check that the code is correct
-        (Right (res)) <- runWeb3 $ getCode ((\(Right x)->x) $ Address.fromText procedureAddress) Latest
-        -- print $ "getCode: " ++ show res
-        -- print =<< (runWeb3 $ Eth.blockNumber)
+        (Right (res)) <- runWeb3 $ getCode procedureAddress Latest
+        -- assertEqual "The deployed bytecode should be correct" ("0x" <> (T.pack $ C8.unpack bsEncodedRuntime)) res
 
         (Right (res, keys)) <- runWeb3 $ do
             let details = (Call {
@@ -710,10 +747,8 @@ beakerKernelTests = TestList $
         case res of
             Left e -> assertFailure "Calling add should succeed"
             Right (theCall,theEffect) -> do
+                -- print theCall
                 assertEqual "The value from add should be 0x56" (read $ T.unpack theCall) 0x56
-                -- print $ "add: " ++ show theCall
-                -- print $ "addEffect: " ++ show theEffect
-                -- print =<< (runWeb3 $ Eth.blockNumber)
                 pure ()
 
         (Right (theCall,theEffect)) <- runWeb3 $ do

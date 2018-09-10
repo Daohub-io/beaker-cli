@@ -181,15 +181,19 @@ checkStorageLog expectedContractAddress expectedStorageKey log = do
     assertEqual "Log data storage key should be correct" expectedStorageKey logStorageKey
 
 blockingGetTransactionByHash txHash = do
+    liftIO $ print "blockingGetTransactionByHash"
     liftIO $ threadDelay 1000000
     r <- getTransactionByHash txHash
+    liftIO $ print r
     case r of
         Nothing -> blockingGetTransactionByHash txHash
         Just x -> pure x
 
 blockingGetTransactionReceipt txHash = do
+    liftIO $ print "blockingGetTransactionReceipt"
     liftIO $ threadDelay 1000000
     r <- getTransactionReceipt txHash
+    liftIO $ print r
     case r of
         Nothing -> blockingGetTransactionReceipt txHash
         Just x -> pure x
