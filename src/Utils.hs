@@ -48,6 +48,22 @@ import System.Process
 runWeb3 :: Web3 a -> IO (Either Web3Error a)
 runWeb3 = runWeb3' (HttpProvider "http://localhost:8545")
 
+-- |Pad out a @ByteString@ to fit into an EVM value. Throw an error if it is
+-- too large.
+padBefore :: Int -> B.ByteString -> B.ByteString
+padBefore i bs =
+    let diff = i - (B.length bs)
+        pads = B.replicate diff 0x00
+    in if diff < 0 then error "too large for EVM value" else pads `B.append` bs
+
+-- |Pad out a @ByteString@ to fit into an EVM value. Throw an error if it is
+-- too large.
+padAfter :: Int -> B.ByteString -> B.ByteString
+padAfter i bs =
+    let diff = i - (B.length bs)
+        pads = B.replicate diff 0x00
+    in if diff < 0 then error "too large for EVM value" else bs `B.append` pads
+
 parseGoodExample bytecode =
     case parse (parseOpCodes <* endOfInput) bytecode `feed` "" of
         Fail i contexts err -> error $ "Opcodes should be parsed in full: " ++ show contexts ++ " " ++ err ++ " remaining: " ++ show (encode i)
@@ -89,7 +105,7 @@ deployFromFileId filepath = do
         Right x -> pure x
         Left e -> error $ "Contract deployment failure: " ++ show e
 
-getDefaultSender :: Web3 (Maybe Address)
+getDefaultSender :: Web3 (Either String Address)
 getDefaultSender = do
     accs <- accounts
     pure $ case accs of
