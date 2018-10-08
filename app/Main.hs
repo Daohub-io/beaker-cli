@@ -5,6 +5,9 @@ import Commands
 import Process
 import Options.Applicative
 import Data.Semigroup ((<>))
+import qualified Data.Text as T
+import qualified Network.Ethereum.Web3.Address as Address
+import Network.Ethereum.Web3.Address (Address)
 
 -- |Product data type containing all of the configuring input to the CLI.
 data Options = Options
@@ -24,6 +27,10 @@ data Command
     -- |The original "compile" command. Takes an input path and a possible
     -- output path.
     | Compile FilePath FilePath (Maybe Capabilities)
+    -- |Deploy a kernel to the blockchain
+    | Deploy
+    -- |See the status of a kernel instance
+    | InstanceStatus Address
     deriving (Eq, Show)
 
 -- |A parser for all the commands. The parser will try each of these commands to
@@ -34,6 +41,8 @@ commands = subparser $ mconcat
     , command "compile" compileCommandParser
     , command "opcodes" printOpCodesCommandParser
     , command "structures" printStructuresCommandParser
+    , command "deploy" deployCommandParser
+    , command "status" statusCommandParser
     ]
 
 -- |Parse the "check" command.
@@ -50,6 +59,19 @@ printOpCodesCommandParser = info (PrintOpCodes <$> readOptParser <*> parseFilePa
 printStructuresCommandParser :: ParserInfo Command
 printStructuresCommandParser = info (PrintStructures <$> readOptParser <*> parseFilePath)
     (progDesc "Print structures")
+
+-- |Parse the "deploy" command.
+deployCommandParser :: ParserInfo Command
+deployCommandParser = info (pure Deploy)
+    (progDesc "Deploy a new kernel to the network")
+
+-- |Parse the "status" command.
+statusCommandParser :: ParserInfo Command
+statusCommandParser = info (InstanceStatus <$> parseAddress)
+    (progDesc "Deploy a new kernel to the network")
+
+parseAddress :: Parser Address
+parseAddress = argument (eitherReader $ (Address.fromText . T.pack)) (metavar "ADDRESS")
 
 readOptParser = option readOpt
     ( long "read"
@@ -104,3 +126,5 @@ process opts = do
         (Check readOpt inPath) -> runCheck readOpt inPath
         (PrintOpCodes readOpt inPath) -> runOpCodes readOpt inPath
         (PrintStructures readOpt inPath) -> runStructures readOpt inPath
+        (Deploy) -> runDeploy
+        (InstanceStatus address) -> runStatus address

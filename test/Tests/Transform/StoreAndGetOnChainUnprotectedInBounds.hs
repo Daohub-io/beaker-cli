@@ -49,6 +49,7 @@ import System.IO.Temp
 
 import Tests.Analyse
 import Tests.Utils
+import Utils
 
 test :: Test
 test = TestLabel "\"StorerAndGetter\" on chain (unprotected, in bound)" $ TestList

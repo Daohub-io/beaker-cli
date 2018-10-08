@@ -55,110 +55,10 @@ import System.FilePath
 import System.Process
 import System.IO.Temp
 
+import Utils
+
 nullRes :: Text
-nullRes = "0x0"
-
-runWeb3 :: Web3 a -> IO (Either Web3Error a)
-runWeb3 = runWeb3' (HttpProvider "http://localhost:8545")
-
-parseGoodExample bytecode =
-  case parse (parseOpCodes <* endOfInput) bytecode `feed` "" of
-      Fail i contexts err -> assertFailure $ "Opcodes should be parsed in full: " ++ show contexts ++ " " ++ err ++ " remaining: " ++ show (encode i)
-      Partial f -> error $ show (f "")
-      Done i r -> pure r
-
-deployFromFile :: ([OpCode] -> [OpCode]) -> FilePath -> IO Address
-deployFromFile transform filepath = do
-    -- TODO: handle exceptions
-    bsEncodedFull <- compileSolidityFileBinFull filepath
-    bsEncodedRunTime <- compileSolidityFileBinRunTime filepath
-    let
-        bsDecodedFull = let (bytes, remainder) = B16.decode $ encodeUtf8 bsEncodedFull
-            in if remainder == B.empty then bytes else error (show remainder)
-        bsDecodedRunTime = let (bytes, remainder) = B16.decode $ encodeUtf8 bsEncodedRunTime
-            in if remainder == B.empty then bytes else error (show remainder)
-    bytecode <- parseGoodExample bsDecodedFull :: IO [OpCode]
-    let bsEncoded = B16.encode $ B.concat $ map toByteString $ transform bytecode
-    newContractAddressRaw <- runWeb3 $ deployContractDefault bsEncoded
-    case newContractAddressRaw of
-        Right x -> pure x
-        Left e -> error $ "Contract deployment failure: " ++ show e
-
-deployContractDefault bsEncoded = do
-    accs <- accounts
-    let sender = case accs of
-            [] -> error "No accounts available"
-            (a:_) -> a
-    (res, txH, tx, txR) <- deployContract' sender bsEncoded
-    newContractAddressRaw <- getContractAddress' txH
-    let newContractAddress = case newContractAddressRaw of
-            Nothing -> error "contract no successfully deployed"
-            Just x -> x
-    code <- getCode newContractAddress Latest
-    pure newContractAddress
-    -- assertEqual "Deployed bytecode is as expected" ("0x" <> (T.pack $ C8.unpack bsEncoded)) code
-
-deployContract sender bsEncoded =  do
-    r <- runWeb3 $ do
-        let details = Call {
-                callFrom = Just sender,
-                callTo = Nothing,
-                callGas = Just 3000000,
-                callGasPrice = Nothing,
-                callValue = Nothing,
-                callData = Just (T.pack $ C8.unpack $ "0x" `B.append` bsEncoded)
-            }
-        theCall <- Eth.call details Latest
-        theEffect <- Eth.sendTransaction details
-        pure (theCall, theEffect)
-    case r of
-        Left e -> assertFailure $ show e
-        Right x -> pure x
-
--- deployContract' :: Address -> B.ByteString -> Web3 (Text, Text, Maybe Transaction, TxReceipt)
-deployContract' sender bsEncoded = do
-    let details = Call {
-            callFrom = Just sender,
-            callTo = Nothing,
-            callGas = Just 3000000,
-            callGasPrice = Nothing,
-            callValue = Nothing,
-            callData = Just (T.pack $ C8.unpack $ "0x" `B.append` bsEncoded)
-        }
-    theCall <- Eth.call details Latest
-    -- liftIO $ print theCall
-    txHash <- Eth.sendTransaction details
-    -- liftIO $ print txHash
-    -- TODO: wait for the transaction to be available
-    tx <- blockingGetTransactionByHash txHash
-    -- liftIO $ print tx
-    txR <- blockingGetTransactionReceipt txHash
-    -- liftIO $ print txR
-    pure (theCall, txHash, tx, txR)
-
-getContractAddress tx = do
-    contractAddressResult <- runWeb3 $ do
-        r <- blockingGetTransactionReceipt tx
-        pure $ txrContractAddress r
-    case contractAddressResult of
-            Left e -> assertFailure ("ss" ++ show e)
-            Right (Just x) -> pure x
-            Right Nothing -> assertFailure "No new contract address was returned"
-
-getContractAddress' tx = do
-    r <- blockingGetTransactionReceipt tx
-    pure $ txrContractAddress r
-
-getAllLogs :: Address -> Web3 [Change]
-getAllLogs contractAddress = do
-    let details = (Filter
-            { filterAddress = Just contractAddress
-            , filterTopics    = Just []
-            , filterFromBlock = Earliest
-            , filterToBlock = Latest
-            })
-    theLogs <- Eth.getLogs details
-    pure (theLogs)
+nullRes = "0x"
 
 parseStorageLog :: Change -> (Address, Text)
 parseStorageLog log = (address, storageKey)
@@ -180,29 +80,3 @@ checkStorageLog expectedContractAddress expectedStorageKey log = do
     assertEqual "Log data address should be correct" expectedContractAddress logContractAddress
     assertEqual "Log data storage key should be correct" expectedStorageKey logStorageKey
 
-blockingGetTransactionByHash txHash = do
-    liftIO $ print "blockingGetTransactionByHash"
-    liftIO $ threadDelay 1000000
-    r <- getTransactionByHash txHash
-    liftIO $ print r
-    case r of
-        Nothing -> blockingGetTransactionByHash txHash
-        Just x -> pure x
-
-blockingGetTransactionReceipt txHash = do
-    liftIO $ print "blockingGetTransactionReceipt"
-    liftIO $ threadDelay 1000000
-    r <- getTransactionReceipt txHash
-    liftIO $ print r
-    case r of
-        Nothing -> blockingGetTransactionReceipt txHash
-        Just x -> pure x
-
-parseProcs theCall =
-    let dataPosition = T.take (2*32) theCall
-        length = T.take (2*32) $ T.drop (2*32) theCall
-        keys = let
-                dat = T.drop (2*2*32) theCall
-                l = T.length dat
-            in map (B.takeWhile ((/=) 0x0)) $ map fst $ map B16.decode $ map encodeUtf8 $ T.chunksOf 64 dat
-    in keys

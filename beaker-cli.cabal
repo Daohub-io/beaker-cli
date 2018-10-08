@@ -26,11 +26,18 @@ library
       , bytestring
       , containers
       , cryptonite
+      , directory
+      , filepath
       , memory
-      , parsec
-      , QuickCheck
       , optparse-applicative
+      , parsec
+      , process
+      , QuickCheck
+      , temporary
+      , text
+      , web3
   exposed-modules:
+      CompileSolidity,
       OpCode.Exporter,
       OpCode.Parser,
       OpCode.StructureParser,
@@ -39,7 +46,8 @@ library
       Check.BeakerCompliance,
       Check.Stores,
       Check.JumpTable,
-      Process
+      Process,
+      Utils
   other-modules:
       Paths_beaker_cli
   default-language: Haskell2010
@@ -72,10 +80,12 @@ executable beaker
     , attoparsec
     , optparse-applicative
     , text
+    , web3
   other-modules: Paths_beaker_cli
     , Types
     , Commands
     , Commands.Deploy
+    , Commands.Status
   default-language: Haskell2010
 
 test-suite beaker-cli-test
@@ -105,7 +115,6 @@ test-suite beaker-cli-test
     , web3
   other-modules:
       Paths_beaker_cli,
-      CompileSolidity,
       Models.HandWritten,
       Tests.HandleOpCodes,
       Tests.Transform,
@@ -145,7 +154,6 @@ test-suite os-tests
     , web3
   other-modules:
       Paths_beaker_cli,
-      CompileSolidity,
       Models.HandWritten,
       Tests.HandleOpCodes,
       Tests.Transform,

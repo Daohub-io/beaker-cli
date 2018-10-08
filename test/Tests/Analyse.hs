@@ -56,6 +56,7 @@ import System.Process
 import System.IO.Temp
 
 import Tests.Utils
+import Utils
 
 storeCheckerTests = TestLabel "Store Checker" $ TestList $
     [ TestLabel "Should Pass Empty Code" $ TestCase $ do

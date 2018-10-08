@@ -2,6 +2,8 @@
 {-# LANGUAGE QuasiQuotes #-}
 module Main where
 
+import Utils
+
 import Control.Exception
 
 import Data.Attoparsec.ByteString
@@ -57,6 +59,8 @@ import System.FilePath
 import System.Process
 import System.IO.Temp
 
+import Utils
+
 -- Import code for parsing opcodes and all low level data handling.
 import Tests.HandleOpCodes
 -- Import code that can analyse the opcodes and perform tests and checks
@@ -65,6 +69,7 @@ import Tests.Analyse
 import Tests.Transform
 -- Import the base utilities that are shared with all test code
 import Tests.Utils
+
 
 main = do
     putStrLn "Running tests..."

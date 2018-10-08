@@ -1,10 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
-module Commands.Deploy where
-
-import Process
+module Commands.Status where
 
 import Control.Concurrent
+import Control.Monad
 import Control.Monad.IO.Class
 
 import qualified Data.Attoparsec.ByteString as A
@@ -32,26 +31,22 @@ import Text.Printf
 
 import Utils
 
-runDeploy :: IO ()
-runDeploy = do
-    kernelCode <- getKernelCode
-    putStrLn "about to deploy"
-    newContractAddress <- runWeb3 $ do
-        accs <- accounts
-        let sender = case accs of
-                [] -> error "No accounts available"
-                (a:_) -> a
-        (res, txH, tx, txR) <- deployContract' sender kernelCode
-        newContractAddressRaw <- getContractAddress' txH
-        let newContractAddress = case newContractAddressRaw of
-                Nothing -> error "contract not successfully deployed"
-                Just x -> x
-        pure newContractAddress
-    print newContractAddress
-    putStrLn "deployed"
-
-compiledKernelPath = "Kernel.bin/Kernel.bin"
--- TODO: currently a bit of a hack
-getKernelCode :: IO B.ByteString
-getKernelCode = do
-    B.readFile compiledKernelPath
+runStatus :: Address -> IO ()
+runStatus address = do
+    void $ runWeb3 $ do
+        Right sender <- getDefaultSender
+        (res, keys) <- do
+            let details = (Call {
+                    callFrom = Just sender,
+                    callTo = Just address,
+                    callGas = Nothing,
+                    callGasPrice = Nothing,
+                    callValue = Nothing,
+                    callData = Just ((JsonAbi.methodId (DFunction "listProcedures" False
+                        [ ] (Just [FunctionArg "" "bytes24[]"]))))
+                })
+            theCall <- T.drop 2 <$> Eth.call details Latest
+            let keys = parseProcs theCall
+            theEffect <- Eth.sendTransaction details
+            pure (theCall, keys)
+        liftIO $ print keys

@@ -55,6 +55,7 @@ import System.Process
 import System.IO.Temp
 
 import Tests.Utils
+import Utils
 
 prop_anyCountedBytecode_monotonic :: [OpCode] -> Bool
 prop_anyCountedBytecode_monotonic bytecode =

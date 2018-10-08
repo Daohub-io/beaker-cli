@@ -75,6 +75,8 @@ import System.IO.Temp
 
 import Text.Printf
 
+import Utils
+
 -- Import code for parsing opcodes and all low level data handling.
 import Tests.HandleOpCodes
 -- Import code that can analyse the opcodes and perform tests and checks
@@ -173,7 +175,7 @@ trivialOnChain = TestLabel "Trivial on chain" $ TestCase $ do
                     (a:_) -> pure a
         print "about to deploy"
         (res, tx) <- deployContract sender bsEncoded
-        print "deployed"
+        putStrLn $ "deployed tx: " ++ show tx
         newContractAddress <- getContractAddress tx
         print "found address"
 
@@ -578,7 +580,10 @@ beakerKernelTests = TestList $
         bsEncoded <- B.readFile "Kernel.bin/Kernel.bin"
         bsEncodedRuntime <- B.readFile "Kernel.bin/Kernel.bin-runtime"
         -- Deploy the beaker kernel
-        (Right (res, txH, tx, txR)) <- runWeb3 $ deployContract' sender bsEncoded
+        res <- runWeb3 $ deployContract' sender bsEncoded
+        (res, txH, tx, txR) <- case res of
+            (Right x) -> pure x
+            Left e -> error $ show e
         -- Get the address of this deployed kernel
         Right (Just newContractAddress) <- runWeb3 $ getContractAddress' txH
         -- Check the code of the kernel correct

@@ -1,7 +1,12 @@
-module Commands (module Commands, module Commands.Deploy) where
+module Commands
+    ( module Commands
+    , module Commands.Deploy
+    , module Commands.Status
+    ) where
 
 import Process
 import Commands.Deploy
+import Commands.Status
 
 import qualified Data.Attoparsec.ByteString as A
 import qualified Data.ByteString.Char8 as B

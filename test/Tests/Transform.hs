@@ -64,6 +64,8 @@ import Tests.Transform.StoreAndGetOnChainProtectedInBounds
 import Tests.Transform.StoreAndGetOnChainProtectedOutOfBounds
 import Tests.Transform.StoreAndGetOnChainUnprotectedInBounds
 
+import Utils
+
 preprocessorTests = TestLabel "Preprocessor" $ TestList $
     -- [ TestLabel "Passthrough" $ TestList $
     --     [ TestLabel "Should Reject Invalid Code" $ TestCase $ do
