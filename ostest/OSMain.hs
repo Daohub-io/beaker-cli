@@ -77,6 +77,8 @@ import Text.Printf
 
 import Utils
 
+import Paths_beaker_cli
+
 -- Import code for parsing opcodes and all low level data handling.
 import Tests.HandleOpCodes
 -- Import code that can analyse the opcodes and perform tests and checks
@@ -577,8 +579,8 @@ beakerKernelTests = TestList $
                 [] -> error "No accounts available"
                 (a:_) -> pure a
         -- Read in the beaker kernel bytecode as hex
-        bsEncoded <- B.readFile "Kernel.bin/Kernel.bin"
-        bsEncodedRuntime <- B.readFile "Kernel.bin/Kernel.bin-runtime"
+        bsEncoded <- B.readFile =<< (getDataFileName "Kernel.bin/Kernel.bin")
+        bsEncodedRuntime <- B.readFile =<< (getDataFileName "Kernel.bin/Kernel.bin-runtime")
         -- Deploy the beaker kernel
         res <- runWeb3 $ deployContract' sender bsEncoded
         (res, txH, tx, txR) <- case res of

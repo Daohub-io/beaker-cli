@@ -12,7 +12,8 @@ extra-source-files:
     README.md
 data-files:
     Kernel.bin/Kernel.bin,
-    test/Models/Adder.hexbinbuild
+    test/Models/Adder.hexbinbuild,
+    Kernel.bin/Kernel.bin-runtime
 
 source-repository head
   type: git
