@@ -9,9 +9,8 @@ extra-deps:
 - type-natural-0.8.0.0
 - ethereum-rlp-0.1.0
 - optparse-applicative-0.14.2.0
-- ../hs-web3
-# - git: https://github.com/Daolab/hs-web3.git
-#   commit: 85c555509d9a68ccda78ad67fbca18cd89961cd8
+- git: https://github.com/Daolab/hs-web3.git
+  commit: 9c0b99335308ce4f9259e3de038ecc164503db19
 resolver: lts-11.1
 
 #ghcjs
