@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/python:3.6.2
+      - image: ccistaging/rust:1-node
     working_directory: /tmp/my-project
     steps:
       - checkout
