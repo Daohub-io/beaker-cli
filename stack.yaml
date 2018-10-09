@@ -1,6 +1,6 @@
 flags: {}
 packages:
-- .
+- beaker-haskell
 allow-newer: true
 extra-deps:
 - equational-reasoning-0.5.1.0
