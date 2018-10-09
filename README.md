@@ -2,20 +2,31 @@
 
 [![CircleCI](https://circleci.com/gh/Daolab/beaker-preprocessor.svg?style=svg&circle-token=94c1ada8b1bd409ae2f7355cb4c76d4082cc1ad9)](https://circleci.com/gh/Daolab/beaker-preprocessor)
 
-This is the Beaker preprocessor. It contains a library and CLI interface for
-making Ethereum smart contracts compatible with BeakerOS. It provides examples
-of verification and code injection.
+This is the Beaker CLI. It contains a library and interface for validating and
+managing Ethereum smart contracts compatible with BeakerOS. This repo includes
+the base `beaker` CLI, written in Rust, as well as an additional analysis
+executable, written in Haskell, which the main CLI sometimes calls.
 
 This is configured to build using
 [stack](https://docs.haskellstack.org/en/stable/README/).
 
+*NB:* `cargo` commands must be run in the `beaker-wrapper` directory.
+
 ## Building
 
 ```sh
-stack build
+cargo build
+cargo run
 ```
 
 ## Testing
+
+### Rust Component Tests
+
+Currently the rust executable is only a wrapper around the Haskell executable,
+however, basic tests can be run with `cargo test`.
+
+### Haskell Component Tests
 
 In order to run the tests, you will need to install a solidity compiler. It is
 currently configured to use the solcjs compiler from npm. You will also need a
@@ -55,7 +66,7 @@ option (which is not the default).
 This prints the parsed opcodes of the contract in the internal format.
 
 ```sh
-stack exec -- beaker opcodes INPUT-PATH --read READ-TYPE
+cargo run -- opcodes INPUT-PATH --read READ-TYPE
 ```
 
 ### To Print the Structured Code
@@ -63,7 +74,7 @@ stack exec -- beaker opcodes INPUT-PATH --read READ-TYPE
 This prints the internal structured code representation.
 
 ```sh
-stack exec -- beaker opcodes INPUT-PATH --read READ-TYPE
+cargo run -- opcodes INPUT-PATH --read READ-TYPE
 ```
 
 ### To Check Compliance with Beaker
@@ -72,8 +83,7 @@ The `check` command lists all of the non-compliances with all of the beaker
 procedure standard requirements. If non are listed the procedure is compliant.
 
 ```sh
-stack exec -- beaker check INPUT-PATH --read READ-TYPE
+cargo run -- check INPUT-PATH --read READ-TYPE
 ```
 
 `INPUT-PATH` is the path of the file where the contract is contained.
-
