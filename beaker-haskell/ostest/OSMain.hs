@@ -667,8 +667,8 @@ beakerKernelTests = TestList $
         assertEqual "There should be zero key/procedure" (length keys) 0
         assertEqual "The keys should be correct" keys  []
 
-        bsEncoded <- B.readFile "test/Models/Adder.hexbinbuild"
-        bsEncodedRuntime <- B.readFile "test/Models/Adder.hexbinrun"
+        bsEncoded <- B.readFile =<< (getDataFileName "test/Models/Adder.hexbinbuild")
+        bsEncodedRuntime <- B.readFile =<< (getDataFileName "test/Models/Adder.hexbinrun")
         let
             oCode = (T.pack $ C8.unpack bsEncoded)
             oCodePaddingLength = 64 - (T.length oCode `mod` 64)

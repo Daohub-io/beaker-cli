@@ -13,7 +13,9 @@ extra-source-files:
 data-files:
     Kernel.bin/Kernel.bin,
     test/Models/Adder.hexbinbuild,
-    Kernel.bin/Kernel.bin-runtime
+    Kernel.bin/Kernel.bin-runtime,
+    test/Models/Adder.hexbinbuild,
+    test/Models/Adder.hexbinrun
 
 source-repository head
   type: git

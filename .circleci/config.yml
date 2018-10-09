@@ -46,17 +46,28 @@ jobs:
           name: Wait for Parity startup
           command: sleep 10
       - run:
-          name: Build
+          name: Build Haskell Component
           command: |
+            cd beaker-haskell
             stack build Cabal --no-terminal
             stack build --no-terminal --test --no-run-tests
+      - run:
+          name: Build Rust Component
+          command: |
+            cd beaker-wrapper
+            cargo build
       - save_cache:
           key: deps3-{{ .Branch }}-
           paths:
             - "~/.stack"
             - ".stack-work"
       - run:
-          name: Test
+          name: Test Haskell Component
           command: |
+            cd beaker-haskell
             stack test --no-terminal
-
+      - run:
+          name: Test Rust Component
+          command: |
+            cd beaker-wrapper
+            cargo test
