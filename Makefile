@@ -1,13 +1,13 @@
 build:
-	cd beaker-haskell && stack build
-	cd beaker-wrapper && cargo build
+	stack build
+	cargo build
 
 clean:
-	cd beaker-haskell && stack clean
-	cd beaker-wrapper && cargo clean
+	stack clean
+	cargo clean
 
 test:
-	cd beaker-haskell && stack test
-	cd beaker-wrapper && cargo test
+	stack test
+	cargo test
 
 .PHONY: build test clean
