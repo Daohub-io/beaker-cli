@@ -35,6 +35,8 @@ import Text.Printf
 
 import Utils
 
+import Paths_beaker_cli
+
 -- Currently set to run an example for evaluation purposes.
 runDeploy :: IO ()
 runDeploy = void example
@@ -59,11 +61,12 @@ runDeployNormal = do
             T.putStrLn $ "Kernel Instance Address: 0x"
                 <> Address.toText address
 
-compiledKernelPath = "Kernel.bin/Kernel.bin"
+-- compiledKernelPath = "../Kernel.bin/Kernel.bin"
 -- TODO: currently a bit of a hack
 getKernelCode :: IO B.ByteString
 getKernelCode = do
-    B.readFile compiledKernelPath
+    filePath <- getDataFileName "Kernel.bin/Kernel.bin"
+    B.readFile filePath
 
 example = runWeb3 $ do
     -- Get the account we will be using
@@ -83,7 +86,8 @@ example = runWeb3 $ do
 
     -- Deploy an example procedure
     -- TODO: abstract away this procedure creation
-    bsEncoded <- liftIO $ B.readFile "test/Models/Adder.hexbinbuild"
+    filePath <- liftIO $ getDataFileName "test/Models/Adder.hexbinbuild"
+    bsEncoded <- liftIO $ B.readFile filePath
     deployAndRegisterProcedure sender kernelInstanceAddress "uhatone" bsEncoded
 
 deployAndRegisterProcedure sender kernelInstanceAddress procKey bsEncoded = do

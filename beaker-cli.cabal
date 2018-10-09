@@ -10,6 +10,9 @@ cabal-version:  >= 1.10
 extra-source-files:
     ChangeLog.md
     README.md
+data-files:
+    Kernel.bin/Kernel.bin,
+    test/Models/Adder.hexbinbuild
 
 source-repository head
   type: git
