@@ -56,7 +56,7 @@ jobs:
           command: |
             cargo build
       - save_cache:
-          key: deps3-{{ .Branch }}-
+          key: deps3-{{ .Branch }}-stack-{{ checksum "stack.yaml" }}-cargo-{{ checksum "Cargo.lock" }}
           paths:
             - "~/.stack"
             - ".stack-work"
