@@ -16,6 +16,7 @@ jobs:
       - restore_cache:
           keys:
             - deps3-{{ .Branch }}-{{ .Revision }}
+            - deps3-{{ .Branch }}-stack-{{ checksum "stack.yaml" }}-cargo-{{ checksum "Cargo.lock" }}
             - deps3-{{ .Branch }}-
       - run:
           name: Setup
