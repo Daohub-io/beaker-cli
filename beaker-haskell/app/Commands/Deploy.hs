@@ -158,5 +158,5 @@ deployAndRegisterProcedure sender kernelInstanceAddress procKey bsEncoded = do
             Right addr -> addr
     if (procedureAddress /= Address.zero)
         then liftIO $ T.putStrLn $ "Example Procedure Address: "
-            <> Address.toText kernelInstanceAddress
+            <> Address.toText procedureAddress
         else error "not a valid address"
