@@ -30,9 +30,9 @@ jobs:
       - run:
           name: Seupt SolC
           command: |
-            sudo add-apt-repository ppa:ethereum/ethereum
-            sudo apt-get update
-            sudo apt-get install solc
+
+            curl -sL https://github.com/ethereum/solidity/releases/download/v0.4.25/solc-static-linux -o solc
+            chmod 755 solc
       - run:
           name: Install Parity
           command: |
