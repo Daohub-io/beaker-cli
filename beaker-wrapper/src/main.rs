@@ -75,7 +75,29 @@ fn main() {
                                 .required(false)
                                 .help("Type of read input")))
                         .subcommand(SubCommand::with_name("deploy")
+                            .about("Deploy an example system to the chain"))
+                        .subcommand(SubCommand::with_name("deploy-kernel")
                             .about("Deploy a kernel to the chain"))
+                        .subcommand(SubCommand::with_name("deploy-proc")
+                            .about("Deploy a contract to the chain and register it as a procedure")
+                            .arg(Arg::with_name("KERNEL-ADDRESS")
+                                .required(true)
+                                .help("the address of the kernel to which we will deploy"))
+                            .arg(Arg::with_name("code")
+                                .long("code")
+                                .value_name("PATH")
+                                .required(true)
+                                .help("The path to the hex encoded bytecode"))
+                            .arg(Arg::with_name("abi")
+                                .long("abi")
+                                .value_name("PATH")
+                                .required(true)
+                                .help("The path to the JSON abi file"))
+                            .arg(Arg::with_name("name")
+                                .long("name")
+                                .value_name("STRING")
+                                .required(true)
+                                .help("A key to give the procedure (24 bytes or less)")))
                         .subcommand(SubCommand::with_name("status")
                             .about("Get the status of a deployed kernel")
                             .arg(Arg::with_name("KERNEL-ADDRESS")
@@ -92,9 +114,26 @@ fn main() {
     // println!("Using input file: {}", matches.value_of("INPUT").unwrap());
 
     // Subcommands
-    // In Rust
+    // In Rust Only
     if let Some(_matches) = matches.subcommand_matches("deploy") {
         deploy::deploy_example();
+    } else if let Some(_matches) = matches.subcommand_matches("deploy-kernel") {
+        deploy::deploy_kernel();
+    } else if let Some(matches) = matches.subcommand_matches("deploy-proc") {
+        let kernel_address_string = matches.value_of("KERNEL-ADDRESS").unwrap();
+        // remove "0x" from the beginning if necessary
+        let kernel_address_trimmed_string = if (kernel_address_string.starts_with("0x")) {
+                let (_,s) = kernel_address_string.split_at(2);
+                s
+            } else {
+                kernel_address_string
+            };
+        let kernel_address_vec : Vec<u8> = kernel_address_trimmed_string.from_hex().unwrap();
+        let kernel_address : Address = Address::from_slice(kernel_address_vec.as_slice());
+        let proc_code_path = matches.value_of("code").unwrap();
+        let proc_abi_path = matches.value_of("abi").unwrap();
+        let name = matches.value_of("name").unwrap();
+        deploy::deploy_proc(kernel_address, proc_code_path.to_string(), proc_abi_path.to_string(), name.to_string());
     } else {
         // Via Haskell
         let output = if let Some(matches) = matches.subcommand_matches("status") {

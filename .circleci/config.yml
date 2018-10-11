@@ -60,6 +60,7 @@ jobs:
       - run:
           name: Build Rust Component
           command: |
+            export PATH=$PATH:.
             make contracts
             cargo build
       - save_cache:
