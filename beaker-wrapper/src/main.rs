@@ -1,7 +1,19 @@
 extern crate clap;
+extern crate web3;
+extern crate rustc_hex;
+extern crate ethabi;
+
 use clap::{Arg, App, SubCommand};
 use std::process::Command;
 use std::str::FromStr;
+use web3::futures::Future;
+use web3::contract::{Contract, Options};
+use web3::types::{Address, U256};
+use rustc_hex::FromHex;
+use ethabi::Token;
+use ethabi::Token::Uint;
+
+mod deploy;
 
 fn main() {
     let matches = App::new("Beaker CLI")
@@ -80,39 +92,43 @@ fn main() {
     // println!("Using input file: {}", matches.value_of("INPUT").unwrap());
 
     // Subcommands
-    let output = if let Some(_matches) = matches.subcommand_matches("deploy") {
-        Some(run_command_direct(&["deploy"]))
-    } else if let Some(matches) = matches.subcommand_matches("status") {
-        let address = matches.value_of("KERNEL-ADDRESS").unwrap();
-        Some(run_command_direct(&["status", address]))
-    } else if let Some(matches) = matches.subcommand_matches("compile") {
-        let address = matches.value_of("INPUT-FILE").unwrap();
-        Some(run_command_direct(&["compile", address]))
-    } else if let Some(matches) = matches.subcommand_matches("opcodes") {
-        let address = matches.value_of("INPUT-FILE").unwrap();
-        let read : &str = match matches.value_of("read") {
-            Some(x) => x,
-            None => "hex",
-        };
-        Some(run_command_direct(&["opcodes", address, "--read", read]))
-    } else if let Some(matches) = matches.subcommand_matches("structures") {
-        let address = matches.value_of("INPUT-FILE").unwrap();
-        let read : &str = match matches.value_of("read") {
-            Some(x) => x,
-            None => "hex",
-        };
-        Some(run_command_direct(&["structures", address, "--read", read]))
+    // In Rust
+    if let Some(_matches) = matches.subcommand_matches("deploy") {
+        deploy::deploy_example();
     } else {
-        None
-    };
+        // Via Haskell
+        let output = if let Some(matches) = matches.subcommand_matches("status") {
+            let address = matches.value_of("KERNEL-ADDRESS").unwrap();
+            Some(run_command_direct(&["status", address]))
+        } else if let Some(matches) = matches.subcommand_matches("compile") {
+            let address = matches.value_of("INPUT-FILE").unwrap();
+            Some(run_command_direct(&["compile", address]))
+        } else if let Some(matches) = matches.subcommand_matches("opcodes") {
+            let address = matches.value_of("INPUT-FILE").unwrap();
+            let read : &str = match matches.value_of("read") {
+                Some(x) => x,
+                None => "hex",
+            };
+            Some(run_command_direct(&["opcodes", address, "--read", read]))
+        } else if let Some(matches) = matches.subcommand_matches("structures") {
+            let address = matches.value_of("INPUT-FILE").unwrap();
+            let read : &str = match matches.value_of("read") {
+                Some(x) => x,
+                None => "hex",
+            };
+            Some(run_command_direct(&["structures", address, "--read", read]))
+        } else {
+            None
+        };
 
-    match output {
-        Some(output) => {
-            if !output.success() {
-                println!("execution failed");
-            }
-        },
-        None => println!("No valid command given"),
+        match output {
+            Some(output) => {
+                if !output.success() {
+                    println!("execution failed");
+                }
+            },
+            None => println!("No valid command given"),
+        };
     }
 }
 

@@ -5,6 +5,10 @@ authors = ["Jake O'Shannessy <joshannessy@gmail.com>"]
 
 [dependencies]
 clap = "~2.32.0"
+# web3 = { git = "https://github.com/tomusdrw/rust-web3" }
+web3 = { path = "../../rust-web3" }
+rustc-hex = "2.0.1"
+ethabi = "6.0.1"
 
 [dev-dependencies]
 assert_cli = "~0.6.3"
