@@ -9,6 +9,11 @@ mod integration {
         assert_cli::Assert::main_binary()
             .stdout().is("No valid command given")
             .unwrap();
+    }
 
+    #[test]
+    fn calling_deploy_example() {
+        assert_cli::Assert::command(&["cargo", "run", "--", "deploy"])
+            .unwrap();
     }
 }

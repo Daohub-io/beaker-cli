@@ -1,3 +1,7 @@
 [submodule "hs-web3"]
 	path = hs-web3
 	url = git@github.com:Daolab/hs-web3.git
+[submodule "beakeros"]
+	path = beakeros
+	url = https://github.com/Daolab/beakeros.git
+	branch = new-registration
