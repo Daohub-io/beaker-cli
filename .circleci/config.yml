@@ -60,6 +60,7 @@ jobs:
       - run:
           name: Build Rust Component
           command: |
+            make contracts
             cargo build
       - save_cache:
           key: deps3-{{ .Branch }}-stack-{{ checksum "stack.yaml" }}-cargo-{{ checksum "Cargo.lock" }}
@@ -73,5 +74,4 @@ jobs:
       - run:
           name: Test Rust Component
           command: |
-            make contracts
             cargo test
