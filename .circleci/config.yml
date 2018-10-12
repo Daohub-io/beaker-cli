@@ -6,6 +6,9 @@ jobs:
     working_directory: /tmp/my-project
     steps:
       - checkout
+      - run: Get Submodules
+        command: |
+          git submodule update --init
       - run:
           name: Install Stack
           command: |
