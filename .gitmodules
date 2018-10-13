@@ -4,4 +4,4 @@
 [submodule "beakeros"]
 	path = beakeros
 	url = https://github.com/Daolab/beakeros.git
-	branch = new-registration
+	branch = master
