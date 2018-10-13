@@ -68,7 +68,6 @@ runStatus address = do
                 })
             theCall <- T.drop 2 <$> Eth.call details Latest
             pure $ theCall
-        liftIO $ print theData
         pure $ C8.unpack $ fst $ B16.decode $ T.encodeUtf8 theData
     -- This prints the raw table values
     -- case A.parseOnly (parseRawVals <* A.endOfInput) $ fst $ B16.decode $ T.encodeUtf8 status of

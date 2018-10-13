@@ -125,13 +125,17 @@ fn main() {
             },
         Ok(x) => x[0],
     };
+    let conn = deploy::EthConn {
+        web3,
+        sender
+    };
 
     // Subcommands
     // In Rust Only
     if let Some(_matches) = matches.subcommand_matches("deploy") {
-        deploy::deploy_example(&web3);
+        deploy::deploy_example(&conn);
     } else if let Some(_matches) = matches.subcommand_matches("deploy-kernel") {
-        deploy::deploy_kernel(&web3, sender);
+        deploy::deploy_kernel(&conn);
     } else if let Some(matches) = matches.subcommand_matches("deploy-proc") {
         let kernel_address_string = matches.value_of("KERNEL-ADDRESS").unwrap();
         // remove "0x" from the beginning if necessary
@@ -146,7 +150,7 @@ fn main() {
         let proc_code_path = matches.value_of("code").unwrap();
         let proc_abi_path = matches.value_of("abi").unwrap();
         let name = matches.value_of("name").unwrap();
-        deploy::deploy_proc(&web3, kernel_address, proc_code_path.to_string(), proc_abi_path.to_string(), name.to_string());
+        deploy::deploy_proc(&conn, kernel_address, proc_code_path.to_string(), proc_abi_path.to_string(), name.to_string());
     } else {
         // Via Haskell
         let output = if let Some(matches) = matches.subcommand_matches("status") {
