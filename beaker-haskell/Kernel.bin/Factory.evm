@@ -1,0 +1,669 @@
+    /* "../beakeros/contracts/Factory.sol":28:3175  contract Factory {... */
+  mstore(0x40, 0x60)
+  jumpi(tag_1, iszero(callvalue))
+  0x0
+  dup1
+  revert
+tag_1:
+  dataSize(sub_0)
+  dup1
+  dataOffset(sub_0)
+  0x0
+  codecopy
+  0x0
+  return
+stop
+
+sub_0: assembly {
+        /* "../beakeros/contracts/Factory.sol":28:3175  contract Factory {... */
+      mstore(0x40, 0x60)
+      jumpi(tag_1, lt(calldatasize, 0x4))
+      and(div(calldataload(0x0), 0x100000000000000000000000000000000000000000000000000000000), 0xffffffff)
+      0x866a87d
+      dup2
+      eq
+      tag_2
+      jumpi
+      dup1
+      0x87536ec
+      eq
+      tag_3
+      jumpi
+      dup1
+      0xc16e50ef
+      eq
+      tag_4
+      jumpi
+      dup1
+      0xcf5ba53f
+      eq
+      tag_5
+      jumpi
+      dup1
+      0xdfe43992
+      eq
+      tag_6
+      jumpi
+    tag_1:
+      0x0
+      dup1
+      revert
+        /* "../beakeros/contracts/Factory.sol":83:120  mapping(byte => uint8) public opCodes */
+    tag_2:
+      jumpi(tag_7, iszero(callvalue))
+      0x0
+      dup1
+      revert
+    tag_7:
+      tag_8
+      and(calldataload(0x4), 0xff00000000000000000000000000000000000000000000000000000000000000)
+      jump(tag_9)
+    tag_8:
+      mload(0x40)
+      0xff
+      swap1
+      swap2
+      and
+      dup2
+      mstore
+      0x20
+      add
+      mload(0x40)
+      dup1
+      swap2
+      sub
+      swap1
+      return
+        /* "../beakeros/contracts/Factory.sol":1747:1910  function codeLength(bytes oCode) pure public returns (uint len) {... */
+    tag_3:
+      jumpi(tag_10, iszero(callvalue))
+      0x0
+      dup1
+      revert
+    tag_10:
+      tag_11
+      0x4
+      0x24
+      dup2
+      calldataload
+      dup2
+      dup2
+      add
+      swap1
+      dup4
+      add
+      calldataload
+      dup1
+      0x20
+      0x1f
+      dup3
+      add
+      dup2
+      swap1
+      div
+      dup2
+      mul
+      add
+      mload(0x40)
+      swap1
+      dup2
+      add
+      0x40
+      mstore
+      dup2
+      dup2
+      mstore
+      swap3
+      swap2
+      swap1
+      0x20
+      dup5
+      add
+      dup4
+      dup4
+      dup1
+      dup3
+      dup5
+      calldatacopy
+      pop
+      swap5
+      swap7
+      pop
+      tag_12
+      swap6
+      pop
+      pop
+      pop
+      pop
+      pop
+      pop
+      jump
+    tag_11:
+      mload(0x40)
+      swap1
+      dup2
+      mstore
+      0x20
+      add
+      mload(0x40)
+      dup1
+      swap2
+      sub
+      swap1
+      return
+        /* "../beakeros/contracts/Factory.sol":352:1739  function validate(bytes oCode) public view returns (uint8 err) {... */
+    tag_4:
+      jumpi(tag_13, iszero(callvalue))
+      0x0
+      dup1
+      revert
+    tag_13:
+      tag_8
+      0x4
+      0x24
+      dup2
+      calldataload
+      dup2
+      dup2
+      add
+      swap1
+      dup4
+      add
+      calldataload
+      dup1
+      0x20
+      0x1f
+      dup3
+      add
+      dup2
+      swap1
+      div
+      dup2
+      mul
+      add
+      mload(0x40)
+      swap1
+      dup2
+      add
+      0x40
+      mstore
+      dup2
+      dup2
+      mstore
+      swap3
+      swap2
+      swap1
+      0x20
+      dup5
+      add
+      dup4
+      dup4
+      dup1
+      dup3
+      dup5
+      calldatacopy
+      pop
+      swap5
+      swap7
+      pop
+      tag_15
+      swap6
+      pop
+      pop
+      pop
+      pop
+      pop
+      pop
+      jump
+        /* "../beakeros/contracts/Factory.sol":2873:3172  function create(bytes oCode) public returns (address d) {... */
+    tag_5:
+      jumpi(tag_16, iszero(callvalue))
+      0x0
+      dup1
+      revert
+    tag_16:
+      tag_17
+      0x4
+      0x24
+      dup2
+      calldataload
+      dup2
+      dup2
+      add
+      swap1
+      dup4
+      add
+      calldataload
+      dup1
+      0x20
+      0x1f
+      dup3
+      add
+      dup2
+      swap1
+      div
+      dup2
+      mul
+      add
+      mload(0x40)
+      swap1
+      dup2
+      add
+      0x40
+      mstore
+      dup2
+      dup2
+      mstore
+      swap3
+      swap2
+      swap1
+      0x20
+      dup5
+      add
+      dup4
+      dup4
+      dup1
+      dup3
+      dup5
+      calldatacopy
+      pop
+      swap5
+      swap7
+      pop
+      tag_18
+      swap6
+      pop
+      pop
+      pop
+      pop
+      pop
+      pop
+      jump
+    tag_17:
+      mload(0x40)
+      0xffffffffffffffffffffffffffffffffffffffff
+      swap1
+      swap2
+      and
+      dup2
+      mstore
+      0x20
+      add
+      mload(0x40)
+      dup1
+      swap2
+      sub
+      swap1
+      return
+        /* "../beakeros/contracts/Factory.sol":1918:2151  function codePosition(bytes oCode) pure public returns (uint code) {... */
+    tag_6:
+      jumpi(tag_19, iszero(callvalue))
+      0x0
+      dup1
+      revert
+    tag_19:
+      tag_11
+      0x4
+      0x24
+      dup2
+      calldataload
+      dup2
+      dup2
+      add
+      swap1
+      dup4
+      add
+      calldataload
+      dup1
+      0x20
+      0x1f
+      dup3
+      add
+      dup2
+      swap1
+      div
+      dup2
+      mul
+      add
+      mload(0x40)
+      swap1
+      dup2
+      add
+      0x40
+      mstore
+      dup2
+      dup2
+      mstore
+      swap3
+      swap2
+      swap1
+      0x20
+      dup5
+      add
+      dup4
+      dup4
+      dup1
+      dup3
+      dup5
+      calldatacopy
+      pop
+      swap5
+      swap7
+      pop
+      tag_21
+      swap6
+      pop
+      pop
+      pop
+      pop
+      pop
+      pop
+      jump
+        /* "../beakeros/contracts/Factory.sol":83:120  mapping(byte => uint8) public opCodes */
+    tag_9:
+      0x0
+      0x20
+      dup2
+      swap1
+      mstore
+      swap1
+      dup2
+      mstore
+      0x40
+      swap1
+      keccak256
+      sload
+      0xff
+      and
+      dup2
+      jump	// out
+        /* "../beakeros/contracts/Factory.sol":1747:1910  function codeLength(bytes oCode) pure public returns (uint len) {... */
+    tag_12:
+        /* "../beakeros/contracts/Factory.sol":1801:1809  uint len */
+      0x0
+        /* "../beakeros/contracts/Factory.sol":1886:1891  oCode */
+      dup2
+        /* "../beakeros/contracts/Factory.sol":1880:1892  mload(oCode) */
+      mload
+        /* "../beakeros/contracts/Factory.sol":1873:1892  len := mload(oCode) */
+      swap3
+        /* "../beakeros/contracts/Factory.sol":1831:1903  {... */
+      swap2
+      pop
+      pop
+      jump	// out
+        /* "../beakeros/contracts/Factory.sol":352:1739  function validate(bytes oCode) public view returns (uint8 err) {... */
+    tag_15:
+        /* "../beakeros/contracts/Factory.sol":404:413  uint8 err */
+      0x0
+      dup1
+      dup1
+        /* "../beakeros/contracts/Factory.sol":426:1713  for (uint256 i = 0; i < oCode.length; i ++) {... */
+    tag_24:
+        /* "../beakeros/contracts/Factory.sol":450:455  oCode */
+      dup4
+        /* "../beakeros/contracts/Factory.sol":450:462  oCode.length */
+      mload
+        /* "../beakeros/contracts/Factory.sol":446:447  i */
+      dup3
+        /* "../beakeros/contracts/Factory.sol":446:462  i < oCode.length */
+      lt
+        /* "../beakeros/contracts/Factory.sol":426:1713  for (uint256 i = 0; i < oCode.length; i ++) {... */
+      iszero
+      tag_25
+      jumpi
+        /* "../beakeros/contracts/Factory.sol":503:508  oCode */
+      dup4
+        /* "../beakeros/contracts/Factory.sol":509:510  i */
+      dup3
+        /* "../beakeros/contracts/Factory.sol":503:511  oCode[i] */
+      dup2
+      mload
+      dup2
+      lt
+      tag_27
+      jumpi
+      invalid
+    tag_27:
+      add
+      0x20
+      add
+      mload
+      exp(0x2, 0xf8)
+      swap1
+      div
+      exp(0x2, 0xf8)
+      mul
+      exp(0x2, 0xf8)
+        /* "../beakeros/contracts/Factory.sol":497:512  uint8(oCode[i]) */
+      swap1
+      div
+        /* "../beakeros/contracts/Factory.sol":485:512  uint8 ins = uint8(oCode[i]) */
+      swap1
+      pop
+        /* "../beakeros/contracts/Factory.sol":1357:1360  ins */
+      dup1
+        /* "../beakeros/contracts/Factory.sol":1357:1368  ins == 0xf0 */
+      0xff
+      and
+        /* "../beakeros/contracts/Factory.sol":1364:1368  0xf0 */
+      0xf0
+        /* "../beakeros/contracts/Factory.sol":1357:1368  ins == 0xf0 */
+      eq
+        /* "../beakeros/contracts/Factory.sol":1353:1381  if (ins == 0xf0) {return 1;} */
+      iszero
+      tag_28
+      jumpi
+        /* "../beakeros/contracts/Factory.sol":1378:1379  1 */
+      0x1
+        /* "../beakeros/contracts/Factory.sol":1371:1379  return 1 */
+      swap3
+      pop
+      jump(tag_23)
+        /* "../beakeros/contracts/Factory.sol":1353:1381  if (ins == 0xf0) {return 1;} */
+    tag_28:
+        /* "../beakeros/contracts/Factory.sol":1409:1412  ins */
+      dup1
+        /* "../beakeros/contracts/Factory.sol":1409:1420  ins == 0xf1 */
+      0xff
+      and
+        /* "../beakeros/contracts/Factory.sol":1416:1420  0xf1 */
+      0xf1
+        /* "../beakeros/contracts/Factory.sol":1409:1420  ins == 0xf1 */
+      eq
+        /* "../beakeros/contracts/Factory.sol":1405:1433  if (ins == 0xf1) {return 2;} */
+      iszero
+      tag_29
+      jumpi
+        /* "../beakeros/contracts/Factory.sol":1430:1431  2 */
+      0x2
+        /* "../beakeros/contracts/Factory.sol":1423:1431  return 2 */
+      swap3
+      pop
+      jump(tag_23)
+        /* "../beakeros/contracts/Factory.sol":1405:1433  if (ins == 0xf1) {return 2;} */
+    tag_29:
+        /* "../beakeros/contracts/Factory.sol":1459:1462  ins */
+      dup1
+        /* "../beakeros/contracts/Factory.sol":1459:1470  ins == 0xf2 */
+      0xff
+      and
+        /* "../beakeros/contracts/Factory.sol":1466:1470  0xf2 */
+      0xf2
+        /* "../beakeros/contracts/Factory.sol":1459:1470  ins == 0xf2 */
+      eq
+        /* "../beakeros/contracts/Factory.sol":1455:1483  if (ins == 0xf2) {return 3;} */
+      iszero
+      tag_30
+      jumpi
+        /* "../beakeros/contracts/Factory.sol":1480:1481  3 */
+      0x3
+        /* "../beakeros/contracts/Factory.sol":1473:1481  return 3 */
+      swap3
+      pop
+      jump(tag_23)
+        /* "../beakeros/contracts/Factory.sol":1455:1483  if (ins == 0xf2) {return 3;} */
+    tag_30:
+        /* "../beakeros/contracts/Factory.sol":1513:1516  ins */
+      dup1
+        /* "../beakeros/contracts/Factory.sol":1513:1524  ins == 0xf4 */
+      0xff
+      and
+        /* "../beakeros/contracts/Factory.sol":1520:1524  0xf4 */
+      0xf4
+        /* "../beakeros/contracts/Factory.sol":1513:1524  ins == 0xf4 */
+      eq
+        /* "../beakeros/contracts/Factory.sol":1509:1537  if (ins == 0xf4) {return 4;} */
+      iszero
+      tag_31
+      jumpi
+        /* "../beakeros/contracts/Factory.sol":1534:1535  4 */
+      0x4
+        /* "../beakeros/contracts/Factory.sol":1527:1535  return 4 */
+      swap3
+      pop
+      jump(tag_23)
+        /* "../beakeros/contracts/Factory.sol":1509:1537  if (ins == 0xf4) {return 4;} */
+    tag_31:
+        /* "../beakeros/contracts/Factory.sol":1571:1574  ins */
+      dup1
+        /* "../beakeros/contracts/Factory.sol":1571:1582  ins == 0xff */
+      0xff
+      and
+        /* "../beakeros/contracts/Factory.sol":1578:1582  0xff */
+      0xff
+        /* "../beakeros/contracts/Factory.sol":1571:1582  ins == 0xff */
+      eq
+        /* "../beakeros/contracts/Factory.sol":1567:1595  if (ins == 0xff) {return 5;} */
+      iszero
+      tag_32
+      jumpi
+        /* "../beakeros/contracts/Factory.sol":1592:1593  5 */
+      0x5
+        /* "../beakeros/contracts/Factory.sol":1585:1593  return 5 */
+      swap3
+      pop
+      jump(tag_23)
+        /* "../beakeros/contracts/Factory.sol":1567:1595  if (ins == 0xff) {return 5;} */
+    tag_32:
+        /* "../beakeros/contracts/Factory.sol":1633:1637  0x60 */
+      0x60
+        /* "../beakeros/contracts/Factory.sol":1626:1629  ins */
+      dup2
+        /* "../beakeros/contracts/Factory.sol":1626:1637  ins >= 0x60 */
+      0xff
+      and
+      lt
+      iszero
+        /* "../beakeros/contracts/Factory.sol":1626:1652  ins >= 0x60 && ins <= 0x7f */
+      dup1
+      iszero
+      tag_33
+      jumpi
+      pop
+        /* "../beakeros/contracts/Factory.sol":1648:1652  0x7f */
+      0x7f
+        /* "../beakeros/contracts/Factory.sol":1641:1644  ins */
+      dup2
+        /* "../beakeros/contracts/Factory.sol":1641:1652  ins <= 0x7f */
+      0xff
+      and
+      gt
+      iszero
+        /* "../beakeros/contracts/Factory.sol":1626:1652  ins >= 0x60 && ins <= 0x7f */
+    tag_33:
+        /* "../beakeros/contracts/Factory.sol":1622:1702  if (ins >= 0x60 && ins <= 0x7f) {... */
+      iszero
+      tag_34
+      jumpi
+        /* "../beakeros/contracts/Factory.sol":1684:1686  95 */
+      0x5f
+        /* "../beakeros/contracts/Factory.sol":1678:1681  ins */
+      dup2
+        /* "../beakeros/contracts/Factory.sol":1678:1686  ins - 95 */
+      sub
+        /* "../beakeros/contracts/Factory.sol":1673:1686  i += ins - 95 */
+      0xff
+      and
+      dup3
+      add
+      swap2
+      pop
+        /* "../beakeros/contracts/Factory.sol":1622:1702  if (ins >= 0x60 && ins <= 0x7f) {... */
+    tag_34:
+        /* "../beakeros/contracts/Factory.sol":464:468  i ++ */
+      0x1
+      swap1
+      swap2
+      add
+      swap1
+        /* "../beakeros/contracts/Factory.sol":426:1713  for (uint256 i = 0; i < oCode.length; i ++) {... */
+      jump(tag_24)
+    tag_25:
+        /* "../beakeros/contracts/Factory.sol":1730:1731  0 */
+      0x0
+        /* "../beakeros/contracts/Factory.sol":1723:1731  return 0 */
+      swap3
+      pop
+        /* "../beakeros/contracts/Factory.sol":352:1739  function validate(bytes oCode) public view returns (uint8 err) {... */
+    tag_23:
+      pop
+      pop
+      swap2
+      swap1
+      pop
+      jump	// out
+        /* "../beakeros/contracts/Factory.sol":2873:3172  function create(bytes oCode) public returns (address d) {... */
+    tag_18:
+        /* "../beakeros/contracts/Factory.sol":2918:2927  address d */
+      0x0
+        /* "../beakeros/contracts/Factory.sol":3016:3021  oCode */
+      dup2
+        /* "../beakeros/contracts/Factory.sol":3010:3022  mload(oCode) */
+      mload
+        /* "../beakeros/contracts/Factory.sol":3097:3101  0x20 */
+      0x20
+        /* "../beakeros/contracts/Factory.sol":3090:3095  oCode */
+      dup4
+        /* "../beakeros/contracts/Factory.sol":3086:3102  add(oCode, 0x20) */
+      add
+        /* "../beakeros/contracts/Factory.sol":3149:3152  len */
+      dup2
+        /* "../beakeros/contracts/Factory.sol":3143:3147  code */
+      dup2
+        /* "../beakeros/contracts/Factory.sol":3139:3153  add(code, len) */
+      add
+        /* "../beakeros/contracts/Factory.sol":3133:3137  code */
+      dup2
+        /* "../beakeros/contracts/Factory.sol":3130:3131  0 */
+      0x0
+        /* "../beakeros/contracts/Factory.sol":3123:3154  create(0, code, add(code, len)) */
+      create
+        /* "../beakeros/contracts/Factory.sol":3118:3154  d := create(0, code, add(code, len)) */
+      swap5
+        /* "../beakeros/contracts/Factory.sol":2949:3165  {... */
+      swap4
+      pop
+      pop
+      pop
+      pop
+      jump	// out
+        /* "../beakeros/contracts/Factory.sol":1918:2151  function codePosition(bytes oCode) pure public returns (uint code) {... */
+    tag_21:
+        /* "../beakeros/contracts/Factory.sol":1974:1983  uint code */
+      0x0
+        /* "../beakeros/contracts/Factory.sol":2064:2069  oCode */
+      dup2
+        /* "../beakeros/contracts/Factory.sol":2058:2070  mload(oCode) */
+      mload
+      pop
+        /* "../beakeros/contracts/Factory.sol":2121:2126  oCode */
+      swap1
+      swap2
+        /* "../beakeros/contracts/Factory.sol":2005:2144  {... */
+      swap1
+      pop
+      jump	// out
+
+    auxdata: 0xa165627a7a723058203e5ef16097af044adb2da6742d1f254d9efa45fc2a98e1347fbd3ee738b9a91a0029
+}

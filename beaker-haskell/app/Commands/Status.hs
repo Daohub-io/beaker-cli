@@ -54,6 +54,22 @@ runStatus address = do
             theCall <- T.drop 2 <$> Eth.call details Latest
             pure $ theCall
         pure theData
+    Right entryProc <- runWeb3 $ do
+        Right sender <- getDefaultSender
+        theData <- do
+            let details = (Call {
+                    callFrom = Just sender,
+                    callTo = Just address,
+                    callGas = Nothing,
+                    callGasPrice = Nothing,
+                    callValue = Nothing,
+                    callData = Just ((JsonAbi.methodId (DFunction "getEntryProcedure" False
+                        [ ] (Just [FunctionArg "" "bytes24"]))))
+                })
+            theCall <- T.drop 2 <$> Eth.call details Latest
+            pure $ theCall
+        liftIO $ print theData
+        pure $ C8.unpack $ fst $ B16.decode $ T.encodeUtf8 theData
     -- This prints the raw table values
     -- case A.parseOnly (parseRawVals <* A.endOfInput) $ fst $ B16.decode $ T.encodeUtf8 status of
     --     Left e -> error $ show e
@@ -66,13 +82,15 @@ runStatus address = do
             Left e -> error e
             Right procTable -> KernelStatus
                 { ks_address = address
+                , ks_entryProcKey = entryProc
                 -- this filter is used to ignore null keys
                 , ks_procedures = filter (\p->proc_key p /= (B.replicate 24 0x00)) procTable
                 }
     putStrLn $ showKernelStatus kernelStatus
 
 showKernelStatus :: KernelStatus -> String
-showKernelStatus ks = "Kernel Instance: " ++ (show $ Address.toText $ ks_address ks) ++ "\n"
+showKernelStatus ks = "Kernel Instance: 0x" ++ (T.unpack $ Address.toText $ ks_address ks) ++ "\n"
+    ++ "  EntryProc: \"" ++ (ks_entryProcKey ks) ++ "\"\n"
     ++ "  Procedures:\n"
     ++ showProcTable (ks_procedures ks)
 
@@ -86,6 +104,7 @@ showProcTable procs = concat $ map showProc procs
 
 data KernelStatus = KernelStatus
     { ks_address :: Address
+    , ks_entryProcKey :: String
     , ks_procedures :: [Procedure]
     } deriving (Show)
 

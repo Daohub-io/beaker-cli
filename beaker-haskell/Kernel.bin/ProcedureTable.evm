@@ -1,0 +1,71 @@
+    /* "../beakeros/contracts/ProcedureTable.sol":28:17128  library ProcedureTable {... */
+  dataSize(sub_0)
+  dataOffset(sub_0)
+    /* "--CODEGEN--":132:134   */
+  0xb
+    /* "--CODEGEN--":166:173   */
+  dup3
+    /* "--CODEGEN--":155:164   */
+  dup3
+    /* "--CODEGEN--":146:153   */
+  dup3
+    /* "--CODEGEN--":137:174   */
+  codecopy
+    /* "--CODEGEN--":252:259   */
+  dup1
+    /* "--CODEGEN--":246:260   */
+  mload
+    /* "--CODEGEN--":243:244   */
+  0x0
+    /* "--CODEGEN--":238:261   */
+  byte
+    /* "--CODEGEN--":232:236   */
+  0x73
+    /* "--CODEGEN--":229:262   */
+  eq
+    /* "--CODEGEN--":270:271   */
+  0x0
+    /* "--CODEGEN--":265:285   */
+  dup2
+  eq
+  tag_2
+  jumpi
+    /* "--CODEGEN--":222:285   */
+  jump(tag_1)
+    /* "--CODEGEN--":265:285   */
+tag_2:
+    /* "--CODEGEN--":274:283   */
+  invalid
+    /* "--CODEGEN--":222:285   */
+tag_1:
+  pop
+    /* "--CODEGEN--":298:307   */
+  address
+    /* "--CODEGEN--":295:296   */
+  0x0
+    /* "--CODEGEN--":288:308   */
+  mstore
+    /* "--CODEGEN--":328:332   */
+  0x73
+    /* "--CODEGEN--":319:326   */
+  dup2
+    /* "--CODEGEN--":311:333   */
+  mstore8
+    /* "--CODEGEN--":352:359   */
+  dup3
+    /* "--CODEGEN--":343:350   */
+  dup2
+    /* "--CODEGEN--":336:360   */
+  return
+stop
+
+sub_0: assembly {
+        /* "../beakeros/contracts/ProcedureTable.sol":28:17128  library ProcedureTable {... */
+      eq(address, deployTimeAddress())
+      mstore(0x40, 0x60)
+      0x0
+      dup1
+      revert
+
+    auxdata: 0xa165627a7a723058202da5f744b33af71de9546ec4f9a6a2542778fa63d73dd21d57f48e008a39904d0029
+}

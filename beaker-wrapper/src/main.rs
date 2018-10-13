@@ -9,6 +9,7 @@ use std::str::FromStr;
 use web3::futures::Future;
 use web3::contract::{Contract, Options};
 use web3::types::{Address, U256};
+use web3::Transport;
 use rustc_hex::FromHex;
 use ethabi::Token;
 use ethabi::Token::Uint;
@@ -113,12 +114,24 @@ fn main() {
     // // required we could have used an 'if let' to conditionally get the value)
     // println!("Using input file: {}", matches.value_of("INPUT").unwrap());
 
+    // If we are doing a command requiring web3, we want to set that up here,
+    // so we can share the connection
+    let (_eloop, transport) = web3::transports::Http::new("http://localhost:8545").unwrap();
+    let web3 = web3::Web3::new(transport);
+    let sender = match web3.eth().accounts().wait() {
+        Err(_r) => {
+            println!("No Ethereum network available");
+            std::process::exit(1);
+            },
+        Ok(x) => x[0],
+    };
+
     // Subcommands
     // In Rust Only
     if let Some(_matches) = matches.subcommand_matches("deploy") {
-        deploy::deploy_example();
+        deploy::deploy_example(&web3);
     } else if let Some(_matches) = matches.subcommand_matches("deploy-kernel") {
-        deploy::deploy_kernel();
+        deploy::deploy_kernel(&web3, sender);
     } else if let Some(matches) = matches.subcommand_matches("deploy-proc") {
         let kernel_address_string = matches.value_of("KERNEL-ADDRESS").unwrap();
         // remove "0x" from the beginning if necessary
@@ -133,7 +146,7 @@ fn main() {
         let proc_code_path = matches.value_of("code").unwrap();
         let proc_abi_path = matches.value_of("abi").unwrap();
         let name = matches.value_of("name").unwrap();
-        deploy::deploy_proc(kernel_address, proc_code_path.to_string(), proc_abi_path.to_string(), name.to_string());
+        deploy::deploy_proc(&web3, kernel_address, proc_code_path.to_string(), proc_abi_path.to_string(), name.to_string());
     } else {
         // Via Haskell
         let output = if let Some(matches) = matches.subcommand_matches("status") {

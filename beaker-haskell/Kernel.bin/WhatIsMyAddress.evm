@@ -1,0 +1,105 @@
+    /* "..\beakeros\contracts\Kernel.sol":87:202  library WhatIsMyAddress {... */
+  dataSize(sub_0)
+  dataOffset(sub_0)
+    /* "--CODEGEN--":132:134   */
+  0xb
+    /* "--CODEGEN--":166:173   */
+  dup3
+    /* "--CODEGEN--":155:164   */
+  dup3
+    /* "--CODEGEN--":146:153   */
+  dup3
+    /* "--CODEGEN--":137:174   */
+  codecopy
+    /* "--CODEGEN--":252:259   */
+  dup1
+    /* "--CODEGEN--":246:260   */
+  mload
+    /* "--CODEGEN--":243:244   */
+  0x0
+    /* "--CODEGEN--":238:261   */
+  byte
+    /* "--CODEGEN--":232:236   */
+  0x73
+    /* "--CODEGEN--":229:262   */
+  eq
+    /* "--CODEGEN--":270:271   */
+  0x0
+    /* "--CODEGEN--":265:285   */
+  dup2
+  eq
+  tag_2
+  jumpi
+    /* "--CODEGEN--":222:285   */
+  jump(tag_1)
+    /* "--CODEGEN--":265:285   */
+tag_2:
+    /* "--CODEGEN--":274:283   */
+  invalid
+    /* "--CODEGEN--":222:285   */
+tag_1:
+  pop
+    /* "--CODEGEN--":298:307   */
+  address
+    /* "--CODEGEN--":295:296   */
+  0x0
+    /* "--CODEGEN--":288:308   */
+  mstore
+    /* "--CODEGEN--":328:332   */
+  0x73
+    /* "--CODEGEN--":319:326   */
+  dup2
+    /* "--CODEGEN--":311:333   */
+  mstore8
+    /* "--CODEGEN--":352:359   */
+  dup3
+    /* "--CODEGEN--":343:350   */
+  dup2
+    /* "--CODEGEN--":336:360   */
+  return
+stop
+
+sub_0: assembly {
+        /* "..\beakeros\contracts\Kernel.sol":87:202  library WhatIsMyAddress {... */
+      eq(address, deployTimeAddress())
+      mstore(0x40, 0x60)
+      jumpi(tag_1, lt(calldatasize, 0x4))
+      and(div(calldataload(0x0), 0x100000000000000000000000000000000000000000000000000000000), 0xffffffff)
+      0x6d4ce63c
+      dup2
+      eq
+      tag_2
+      jumpi
+    tag_1:
+      0x0
+      dup1
+      revert
+        /* "..\beakeros\contracts\Kernel.sol":118:199  function get() public view returns (address) {... */
+    tag_2:
+      tag_3
+      jump(tag_4)
+    tag_3:
+      mload(0x40)
+      0xffffffffffffffffffffffffffffffffffffffff
+      swap1
+      swap2
+      and
+      dup2
+      mstore
+      0x20
+      add
+      mload(0x40)
+      dup1
+      swap2
+      sub
+      swap1
+      return
+    tag_4:
+        /* "..\beakeros\contracts\Kernel.sol":181:191  msg.sender */
+      caller
+        /* "..\beakeros\contracts\Kernel.sol":118:199  function get() public view returns (address) {... */
+      swap1
+      jump	// out
+
+    auxdata: 0xa165627a7a72305820bb6d2c0709b6fe8a46d03e358bb94feffd83da712b89d30cdcf21d090577b7ff0029
+}
