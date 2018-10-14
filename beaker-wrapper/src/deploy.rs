@@ -4,16 +4,11 @@ extern crate rustc_hex;
 extern crate ethabi;
 extern crate std;
 
-use clap::{Arg, App, SubCommand};
-use std::process::Command;
-use std::str::FromStr;
 use web3::futures::Future;
 use web3::contract::{Contract, Options};
 use web3::types::{Address, U256};
 use web3::Transport;
-use web3::api::Web3;
 use rustc_hex::FromHex;
-use ethabi::Token;
 use ethabi::Token::Uint;
 
 pub fn string_to_proc_key(mut name: String) -> [u8; 24] {
@@ -47,7 +42,7 @@ pub fn register_procedure<T: Transport>(conn:  &EthConn<T>, kernel_contract: &Co
             Ok(x) => x,
     };
     println!("Register Procedure: {:?}", query_result);
-    let (err_token, proc_address) = query_result;
+    let (err_token, _proc_address) = query_result;
     if let Uint(err_code) = err_token {
         if !err_code.is_zero() {
             panic!("err_code is not zero, it is {}", err_code);
@@ -88,7 +83,7 @@ pub fn deploy_example<T: Transport>(conn:  &EthConn<T>) {
     deploy_register_procedure(conn, &kernel_contract, String::from("Bob's procedure"), caps.clone());
     deploy_register_procedure(conn, &kernel_contract, String::from("Jane's procedure"), caps.clone());
 
-    kernel_contract.call("setEntryProcedure", (string_to_proc_key(String::from("member's procedure"))), conn.sender, Options::default()).wait().unwrap();
+    kernel_contract.call("setEntryProcedure", (string_to_proc_key(String::from("member's procedure")),), conn.sender, Options::default()).wait().unwrap();
 }
 
 pub fn deploy_kernel<T: Transport>(conn:  &EthConn<T>) -> Contract<T> {

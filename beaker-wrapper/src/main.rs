@@ -7,12 +7,8 @@ use clap::{Arg, App, SubCommand};
 use std::process::Command;
 use std::str::FromStr;
 use web3::futures::Future;
-use web3::contract::{Contract, Options};
-use web3::types::{Address, U256};
-use web3::Transport;
+use web3::types::{Address};
 use rustc_hex::FromHex;
-use ethabi::Token;
-use ethabi::Token::Uint;
 
 mod deploy;
 
@@ -139,7 +135,7 @@ fn main() {
     } else if let Some(matches) = matches.subcommand_matches("deploy-proc") {
         let kernel_address_string = matches.value_of("KERNEL-ADDRESS").unwrap();
         // remove "0x" from the beginning if necessary
-        let kernel_address_trimmed_string = if (kernel_address_string.starts_with("0x")) {
+        let kernel_address_trimmed_string = if kernel_address_string.starts_with("0x") {
                 let (_,s) = kernel_address_string.split_at(2);
                 s
             } else {
