@@ -11,6 +11,8 @@ import qualified Data.Attoparsec.ByteString as A
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8 (pack, unpack)
 import qualified Data.ByteString.Base16 as B16 (encode, decode)
+import qualified Data.Char
+import qualified Data.List
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -100,6 +102,20 @@ showProcTable procs = concat $ map showProc procs
             ++ (concat $ map showCap caps)
         showCap (UnknownCap capType vals) = "      " ++ "0x" ++ (printf "%x" capType) ++ ": " ++ show vals ++ "\n"
         showCap (WriteCap location size) = "      " ++ "store_write: at " ++ printf "0x%x" location ++ " with " ++ show size ++ " additional keys\n"
+        showCap (LogCap []) = "      " ++ "log: with any topics\n"
+        showCap (LogCap topics) = "      " ++ "log: with topics [" ++ (Data.List.intercalate "," $ map showTopic topics) ++ "]\n"
+            where
+                showTopic topic = if all (\c->Data.Char.isPrint c || c == '\0') topicString
+                    then show topicString
+                    else (((++) "0x") . C8.unpack . B16.encode) topicByteString
+                    where
+                        topicByteString = integerToEVM256 topic
+                        topicString = C8.unpack topicByteString
+        showCap RegisterCap = "      " ++ "register: any procedure\n"
+        showCap (CallCap []) = "      " ++ "call: any procedure\n"
+        showCap (CallCap keys) = "      " ++ "call: procedures [" ++ (Data.List.intercalate "," $ map showProcKey keys) ++ "]\n"
+            where
+                showProcKey = show
 
 data KernelStatus = KernelStatus
     { ks_address :: Address
@@ -117,6 +133,9 @@ data Procedure = Procedure
 data Cap
     = UnknownCap Integer [B.ByteString]
     | WriteCap {- location -} Natural {- size -} Natural
+    | LogCap {- topcs -} [Natural]
+    | CallCap {- topcs -} [Natural]
+    | RegisterCap
     deriving (Show)
 
 parseRawVals :: A.Parser (B.ByteString, Integer, [B.ByteString])
@@ -153,6 +172,13 @@ parseCap = do
         0x7 -> case capValues of
             [location, size] -> WriteCap (fromIntegral $ evm256ToInteger $ location) (fromIntegral $ evm256ToInteger $ size)
             _ -> error "invalid write cap"
+        0x9 -> if (length capValues) > 4
+            then error "invalid log cap"
+            else LogCap $ map (fromIntegral . evm256ToInteger) capValues
+        0x3 -> CallCap $ map (fromIntegral . evm256ToInteger) capValues
+        11 -> if (length capValues) > 0
+            then error "invalid regiser cap"
+            else RegisterCap
         _ -> UnknownCap capType capValues
 
 parseCapValue :: A.Parser B.ByteString

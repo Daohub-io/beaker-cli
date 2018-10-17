@@ -76,10 +76,10 @@ pub fn deploy_example<T: Transport>(conn:  &EthConn<T>) {
     let kernel_contract = deploy_kernel(conn);
 
     // Deploying a contract and register it as a procedure
-    let caps : Vec<U256> = vec![U256::from(3),U256::from(7),U256::from(0x8000),U256::from(1)];
+    let caps : Vec<U256> = vec![U256::from(3),U256::from(7),U256::from(0x8000),U256::from(1),U256::from(1),U256::from(9)];
     deploy_register_procedure(conn, &kernel_contract, String::from("testName"), caps.clone());
     deploy_register_procedure(conn, &kernel_contract, String::from("another one"), caps.clone());
-    deploy_register_procedure(conn, &kernel_contract, String::from("member's procedure"), vec![U256::from(3),U256::from(7),U256::from(0x8000),U256::from(1),U256::from(2),U256::from(9),U256::from(0),U256::from(1),U256::from(3)]);
+    deploy_register_procedure(conn, &kernel_contract, String::from("member's procedure"), vec![U256::from(3),U256::from(7),U256::from(0x8000),U256::from(1),U256::from(2),U256::from(9),U256::from(0x41),U256::from(1),U256::from(3),U256::from(3),U256::from(9),U256::from(0x41),U256::from(0x123456)]);
     deploy_register_procedure(conn, &kernel_contract, String::from("Bob's procedure"), caps.clone());
     deploy_register_procedure(conn, &kernel_contract, String::from("Jane's procedure"), caps.clone());
 
