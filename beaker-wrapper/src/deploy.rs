@@ -28,9 +28,10 @@ pub fn string_to_proc_key(mut name: String) -> [u8; 24] {
     procedure_key
 }
 
-pub fn register_procedure<T: Transport>(conn:  &EthConn<T>, kernel_contract: &Contract<T>, procedure_address: Address, name: String, caps : Vec<U256>) {
+pub fn register_procedure<T: Transport>(conn:  &EthConn<T>, kernel_contract: &Contract<T>, procedure_address: Address, name: String, caps : Vec<Cap>) {
+    let caps_vals = caps_into_u256s(caps);
     let procedure_key = string_to_proc_key(name);
-    let params = (procedure_key, procedure_address, caps);
+    let params = (procedure_key, procedure_address, caps_vals);
 
     // Do a test run of the registration
     let query_result : (ethabi::Token, Address) = match kernel_contract.query("registerAnyProcedure", params.clone(), Some(conn.sender), Options::default(), Some(web3::types::BlockNumber::Latest)).wait() {
@@ -76,10 +77,11 @@ pub fn deploy_example<T: Transport>(conn:  &EthConn<T>) {
     let kernel_contract = deploy_kernel(conn);
 
     // Deploying a contract and register it as a procedure
-    let caps : Vec<U256> = vec![U256::from(3),U256::from(7),U256::from(0x8000),U256::from(1),U256::from(1),U256::from(9)];
+    let caps: Vec<Cap> = vec![Cap::WriteCap{address: U256::from(0x8000), add_keys: U256::from(1)},Cap::LogCap(vec![])];
+
     deploy_register_procedure(conn, &kernel_contract, String::from("testName"), caps.clone());
     deploy_register_procedure(conn, &kernel_contract, String::from("another one"), caps.clone());
-    deploy_register_procedure(conn, &kernel_contract, String::from("member's procedure"), vec![U256::from(3),U256::from(7),U256::from(0x8000),U256::from(1),U256::from(2),U256::from(9),U256::from(0x41),U256::from(1),U256::from(3),U256::from(3),U256::from(9),U256::from(0x41),U256::from(0x123456)]);
+    deploy_register_procedure(conn, &kernel_contract, String::from("member's procedure"), vec![Cap::WriteCap{address: U256::from(0x8000), add_keys: U256::from(1)},Cap::LogCap(vec![U256::from(0x41)]),Cap::CallCap(Vec::new()),Cap::LogCap(vec![U256::from(0x41),U256::from(0x123456)])]);
     deploy_register_procedure(conn, &kernel_contract, String::from("Bob's procedure"), caps.clone());
     deploy_register_procedure(conn, &kernel_contract, String::from("Jane's procedure"), caps.clone());
 
@@ -126,7 +128,7 @@ pub fn deploy_proc<T: Transport>(conn:  &EthConn<T>, kernel_address: Address, pr
     deploy_register_procedure(conn, &kernel_contract, name, vec![])
 }
 
-pub fn deploy_register_procedure<T: Transport>(conn:  &EthConn<T>, kernel_contract: &Contract<T>, name: String, caps : Vec<U256>) {
+pub fn deploy_register_procedure<T: Transport>(conn:  &EthConn<T>, kernel_contract: &Contract<T>, name: String, caps : Vec<Cap>) {
     // Deploy the procedure
     let example_code: Vec<u8> = include_str!("../../Adder/Adder.bin").from_hex().unwrap();
         // Deploying a contract
@@ -154,4 +156,38 @@ pub fn deploy_register_procedure<T: Transport>(conn:  &EthConn<T>, kernel_contra
 pub struct EthConn<T: Transport> {
     pub web3: web3::api::Web3<T>,
     pub sender: Address,
+}
+
+#[derive(Clone)]
+pub enum Cap {
+    WriteCap {address: U256, add_keys: U256},
+    RegisterCap,
+    CallCap(Vec<U256>),
+    LogCap(Vec<U256>), // vec is of length 0-4
+}
+
+impl Cap {
+    fn to_u256s(&self) -> Vec<U256> {
+        match self {
+            Cap::WriteCap {address, add_keys} => vec![/* length */ U256::from(3), /* type */ U256::from(7),U256::from(address),U256::from(add_keys)],
+            Cap::RegisterCap => vec![/* length */ U256::from(1), /* type */ U256::from(11)],
+            Cap::LogCap(topics) => {
+                let mut v = vec![/* length */ U256::from(1+topics.len()), /* type */ U256::from(9)];
+                v.extend(topics);
+                v
+                },
+            Cap::CallCap(keys) => vec![/* length */ U256::from(1), /* type */ U256::from(3)],
+        }
+    }
+}
+
+fn caps_into_u256s(caps: Vec<Cap>) -> Vec<U256> {
+    concat_vecs(caps.iter().map(|c| {c.to_u256s()}).collect())
+}
+
+fn concat_vecs(vecs: Vec<Vec<U256>>) -> Vec<U256> {
+    let size = vecs.iter().fold(0, |a, b| a + b.len());
+    vecs.into_iter().fold(Vec::with_capacity(size), |mut acc, v| {
+        acc.extend(v); acc
+    })
 }
