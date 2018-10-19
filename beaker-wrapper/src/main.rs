@@ -10,7 +10,7 @@ use web3::futures::Future;
 use web3::types::{Address};
 use rustc_hex::FromHex;
 
-mod deploy;
+pub mod deploy;
 
 fn main() {
     let matches = App::new("Beaker CLI")
@@ -72,7 +72,12 @@ fn main() {
                                 .required(false)
                                 .help("Type of read input")))
                         .subcommand(SubCommand::with_name("deploy")
-                            .about("Deploy an example system to the chain"))
+                            .about("Deploy an example system to the chain")
+                            .arg(Arg::with_name("big")
+                                    .long("big")
+                                    .short("b")
+                                    .takes_value(false)
+                                    .help("Deploy a pathologically big example")))
                         .subcommand(SubCommand::with_name("deploy-kernel")
                             .about("Deploy a kernel to the chain"))
                         .subcommand(SubCommand::with_name("deploy-proc")
@@ -128,8 +133,13 @@ fn main() {
 
     // Subcommands
     // In Rust Only
-    if let Some(_matches) = matches.subcommand_matches("deploy") {
-        deploy::deploy_example(&conn);
+    if let Some(deploy_matches) = matches.subcommand_matches("deploy") {
+        if deploy_matches.is_present("big") {
+            println!("big example");
+            deploy::deploy_big_example(&conn);
+        } else {
+            deploy::deploy_example(&conn);
+        }
     } else if let Some(_matches) = matches.subcommand_matches("deploy-kernel") {
         deploy::deploy_kernel(&conn);
     } else if let Some(matches) = matches.subcommand_matches("deploy-proc") {
