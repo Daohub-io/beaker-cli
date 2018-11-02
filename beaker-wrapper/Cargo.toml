@@ -9,6 +9,7 @@ web3 = { git = "https://github.com/Daolab/rust-web3", rev = "eda5d97db3133dabba9
 # web3 = { path = "../../rust-web3" }
 rustc-hex = "2.0.1"
 ethabi = "6.0.1"
+time = "0.1"
 
 [dev-dependencies]
 assert_cli = "~0.6.3"

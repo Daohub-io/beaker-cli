@@ -30,58 +30,23 @@ pub fn string_to_proc_key(mut name: String) -> [u8; 24] {
     procedure_key
 }
 
-pub fn register_procedure<T: Transport>(conn:  &EthConn<T>, kernel_contract: &Contract<T>, procedure_address: Address, name: String, caps : Vec<Cap>) -> Result<TransactionReceipt,String> {
+pub fn register_procedure<'a, T: Transport>(conn:  &'a EthConn<T>, kernel_contract: &'a Contract<T>, procedure_address: Address, name: String, caps : Vec<Cap>) -> Box<Future<Item = TransactionReceipt, Error = String>+'a> {
     let caps_vals = caps_into_u256s(caps);
     let procedure_key = string_to_proc_key(name);
-    let params = (procedure_key, procedure_address, caps_vals);
+    let params = (procedure_key, procedure_address, caps_vals); // this is needed by the future
 
     // Do a test run of the registration
-    let gas_estimate_result: U256 = kernel_contract.estimate_gas("registerAnyProcedure", params.clone(), conn.sender, Options::default()).wait().expect("Gas Estimate");
-    println!("Gas Estimate: {:?}", gas_estimate_result);
-    let opts = Options::with(|opts| opts.gas = Some(gas_estimate_result));
-    // println!("Options: {:?}", &opts);
-    let query_result: Result<(ethabi::Token, Address),web3::contract::Error> = kernel_contract.query("registerAnyProcedure", params.clone(), Some(conn.sender), opts.clone(), Some(web3::types::BlockNumber::Latest)).wait();
-    match query_result {
-        Err(r) => {
-            println!("registerAnyProcedure (query) failed");
-            println!("{:?}", r);
-            return Err(format!("{:?}",r));
-        },
-        Ok((err_token, _proc_address)) => {
-            println!("Register Procedure: {:?}", err_token);
-            if let Uint(err_code) = err_token {
-                if !err_code.is_zero() {
-                    return Err(format!("err_code is not zero, it is {}", err_code));
-                }
-            } else {
-                return Err(format!("err_code is not even a number, it is {:?}", err_token));
-            };
-        },
-    };
-
-    let result = kernel_contract.call_with_confirmations("registerAnyProcedure", params.clone(), conn.sender, opts.clone(), REQ_CONFIRMATIONS).wait();
-    match result {
-        Err(r) => {
-            println!("Transaction failed");
-            println!("{:?}", r);
-            Err(format!("{:?}",r))
-        },
-        Ok(receipt) => {
-            match receipt.status {
-                None => Err(String::from("No status code")),
-                Some(web3::types::U64([0])) => {
-                    println!("Procedure Registration Receipt: {:?}", receipt);
-                    Err(String::from("Registration failed - 0 exit code"))
-                    },
-                Some(web3::types::U64([1])) => {
-                    println!("Procedure Gas Used (Registration): {:?}", receipt.gas_used);
-                    println!("Procedure Success: {:?}", receipt.status);
-                    Ok(receipt)
-                },
-                Some(x) => Err(format!("{} is an invalid status code", x))
-            }
-        }
-    }
+    let gg1: web3::contract::CallFuture<U256,_> = kernel_contract.estimate_gas("registerAnyProcedure", params.clone(), conn.sender, Options::default());
+    let gggg = kernel_contract.estimate_gas("registerAnyProcedure", params.clone(), conn.sender, Options::default()).map_err(|_| String::from("ss")).and_then(move |gas_estimate| {
+            let opts = Options::with(|opts| opts.gas = Some(gas_estimate));
+            // let query_result: Result<(ethabi::Token, Address),web3::contract::Error> = kernel_contract.query("registerAnyProcedure", params.clone(), Some(conn.sender), opts.clone(), Some(web3::types::BlockNumber::Latest)).wait();
+            let result = kernel_contract.call_with_confirmations("registerAnyProcedure", params.clone(), conn.sender, opts.clone(), REQ_CONFIRMATIONS);
+            // web3::futures::future::ok((query_result,result))
+            result.map_err(|_| String::from("ss"))
+        });
+    Box::new(gggg.and_then(|result| {
+        web3::futures::future::ok(result)
+    }))
 }
 
 pub fn deploy_example<T: Transport>(conn:  &EthConn<T>) {
@@ -90,13 +55,19 @@ pub fn deploy_example<T: Transport>(conn:  &EthConn<T>) {
 
     // Deploying a contract and register it as a procedure
     let caps: Vec<Cap> = vec![Cap::WriteCap{address: U256::from(0x8000), add_keys: U256::from(1)},Cap::LogCap(vec![])];
-
-    deploy_register_procedure(conn, &kernel_contract, String::from("testName"), vec![]).expect("Procedure deployed successfully");
-    deploy_register_procedure(conn, &kernel_contract, String::from("another one"), caps.clone()).expect("Procedure deployed successfully");
-    deploy_register_procedure(conn, &kernel_contract, String::from("member's procedure"), vec![Cap::WriteCap{address: U256::from(0x8000), add_keys: U256::from(1)},Cap::LogCap(vec![U256::from(0x41)]),Cap::CallCap(Vec::new()),Cap::LogCap(vec![U256::from(0x41),U256::from(0x123456)])]).expect("Procedure deployed successfully");
-    deploy_register_procedure(conn, &kernel_contract, String::from("Bob's procedure"), caps.clone()).expect("Procedure deployed successfully");
-    deploy_register_procedure(conn, &kernel_contract, String::from("Jane's procedure"), caps.clone()).expect("Procedure deployed successfully");
-
+    println!("l1");
+    let p1 = deploy_register_procedure_f(conn, &kernel_contract, String::from("testName"), vec![]);
+    println!("l2");
+    let p2 = deploy_register_procedure_f(conn, &kernel_contract, String::from("another one"), caps.clone());
+    println!("l3");
+    let p3 = deploy_register_procedure_f(conn, &kernel_contract, String::from("member's procedure"), vec![Cap::WriteCap{address: U256::from(0x8000), add_keys: U256::from(1)},Cap::LogCap(vec![U256::from(0x41)]),Cap::CallCap(Vec::new()),Cap::LogCap(vec![U256::from(0x41),U256::from(0x123456)])]);
+    println!("l4");
+    let p4 = deploy_register_procedure_f(conn, &kernel_contract, String::from("Bob's procedure"), caps.clone());
+    println!("l5");
+    let p5 = deploy_register_procedure_f(conn, &kernel_contract, String::from("Jane's procedure"), caps.clone());
+    println!("l6");
+    let ps = vec![p1,p2,p3,p4,p5];
+    web3::futures::future::join_all(ps).wait().map_err(|_| String::from("ss")).expect("Procedures deployed successfully");
     kernel_contract.call("setEntryProcedure", (string_to_proc_key(String::from("member's procedure")),), conn.sender, Options::default()).wait().unwrap();
     println!("Kernel Instance Address: {:?}", &kernel_contract.address());
 }
@@ -108,13 +79,18 @@ pub fn deploy_big_example<T: Transport>(conn:  &EthConn<T>) {
     // Deploying a contract and register it as a procedure
     let caps: Vec<Cap> = vec![Cap::WriteCap{address: U256::from(0x8000), add_keys: U256::from(1)},Cap::LogCap(vec![])];
 
-    deploy_register_procedure(conn, &kernel_contract, String::from("testName"), vec![]).expect("Procedure deployed successfully");
-    deploy_register_procedure(conn, &kernel_contract, String::from("another one"), caps.clone()).expect("Procedure deployed successfully");
-    deploy_register_procedure(conn, &kernel_contract, String::from("member's procedure"), vec![Cap::WriteCap{address: U256::from(0x8000), add_keys: U256::from(1)},Cap::LogCap(vec![U256::from(0x41)]),Cap::CallCap(Vec::new()),Cap::LogCap(vec![U256::from(0x41),U256::from(0x123456)])]).expect("Procedure deployed successfully");
-    deploy_register_procedure(conn, &kernel_contract, String::from("Bob's procedure"), caps.clone()).expect("Procedure deployed successfully");
-    deploy_register_procedure(conn, &kernel_contract, String::from("Jane's procedure"), caps.clone()).expect("Procedure deployed successfully");
-
+    let p1 = deploy_register_procedure_f(conn, &kernel_contract, String::from("testName"), vec![]);
+    let p2 = deploy_register_procedure_f(conn, &kernel_contract, String::from("another one"), caps.clone());
+    let p3 = deploy_register_procedure_f(conn, &kernel_contract, String::from("member's procedure"), vec![Cap::WriteCap{address: U256::from(0x8000), add_keys: U256::from(1)},Cap::LogCap(vec![U256::from(0x41)]),Cap::CallCap(Vec::new()),Cap::LogCap(vec![U256::from(0x41),U256::from(0x123456)])]);
+    let p4 = deploy_register_procedure_f(conn, &kernel_contract, String::from("Bob's procedure"), caps.clone());
+    let p5 = deploy_register_procedure_f(conn, &kernel_contract, String::from("Jane's procedure"), caps.clone());
     let n_procs = 250;
+    let mut ps = Vec::with_capacity(n_procs+5);
+    ps.push(p1);
+    ps.push(p2);
+    ps.push(p3);
+    ps.push(p4);
+    ps.push(p5);
     for proc_num in 0..n_procs {
         let n_caps = std::cmp::min(32,proc_num);
         // let n_caps = proc_num;
@@ -122,9 +98,10 @@ pub fn deploy_big_example<T: Transport>(conn:  &EthConn<T>) {
         let these_caps: Vec<Cap> = (0..n_caps).map(|cap_num| Cap::WriteCap{address: U256::from(0x8000+proc_num*n_caps+cap_num), add_keys: U256::from(1)}).collect();
         println!("----------------------------------------------");
         println!("Registering Procedure #{} with {} capabilities", proc_num, n_caps);
-        deploy_register_procedure(conn, &kernel_contract, String::from(format!("Jane's proc #{}",proc_num)), these_caps).expect("Procedure deployed successfully");
+        ps.push(deploy_register_procedure_f(conn, &kernel_contract, String::from(format!("Jane's proc #{}",proc_num)), these_caps));
         println!("----------------------------------------------");
     }
+    web3::futures::future::join_all(ps).wait().map_err(|_| String::from("ss")).expect("Procedures deployed successfully");
     kernel_contract.call("setEntryProcedure", (string_to_proc_key(String::from("member's procedure")),), conn.sender, Options::default()).wait().unwrap();
     println!("Kernel Instance Address: {:?}", &kernel_contract.address());
 }
@@ -192,7 +169,34 @@ pub fn deploy_register_procedure<T: Transport>(conn:  &EthConn<T>, kernel_contra
     let web3::types::Bytes(code_vec_example)= conn.web3.eth().code(example_contract.address(), None).wait().expect("Procedure code should be retrieved");
     println!("Procedure Code Length: {:?}", code_vec_example.len());
     println!("Procedure Gas Used (Deployment): {:?}", example_receipt.gas_used);
-    register_procedure(conn, kernel_contract, example_contract.address(), name, caps)
+    register_procedure(conn, kernel_contract, example_contract.address(), name, caps).wait().map_err(|_| String::from("ss"))
+}
+
+pub fn deploy_register_procedure_f<'a, T: Transport>(conn:  &'a EthConn<T>, kernel_contract: &'a Contract<T>, name: String, caps : Vec<Cap>) -> Box<Future<Item = TransactionReceipt, Error = String>+'a> {
+    // Deploy the procedure
+    let example_code: Vec<u8> = include_str!("../../Adder/Adder.bin").from_hex().unwrap();
+        // Deploying a contract
+    Box::new(Contract::deploy(conn.web3.eth(), include_bytes!("../../Adder/Adder.abi"))
+            .unwrap()
+            .confirmations(REQ_CONFIRMATIONS)
+            .options(Options::with(|opt| {
+                opt.gas = Some(3_000_000.into())
+            }))
+            .execute(
+                example_code,
+                ( ),
+                conn.sender,
+            )
+            .expect("Correct parameters are passed to the constructor.")
+            // If we pass this wait to the parent we can do faster batch jobs
+            .map_err(|_| String::from("ss"))
+            .and_then(move |(example_contract,example_receipt)| {
+                println!("Procedure Address: {:?}", example_contract.address());
+                let web3::types::Bytes(code_vec_example)= conn.web3.eth().code(example_contract.address(), None).wait().expect("Procedure code should be retrieved");
+                println!("Procedure Code Length: {:?}", code_vec_example.len());
+                println!("Procedure Gas Used (Deployment): {:?}", example_receipt.gas_used);
+                register_procedure(conn, kernel_contract, example_contract.address(), name, caps)
+            }))
 }
 
 pub struct EthConn<T: Transport> {

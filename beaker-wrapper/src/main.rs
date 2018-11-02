@@ -2,6 +2,7 @@ extern crate clap;
 extern crate web3;
 extern crate rustc_hex;
 extern crate ethabi;
+extern crate time;
 
 use clap::{Arg, App, SubCommand};
 use std::process::Command;

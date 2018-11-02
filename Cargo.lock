@@ -92,6 +92,7 @@ dependencies = [
  "clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethabi 6.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-hex 2.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "time 0.1.40 (registry+https://github.com/rust-lang/crates.io-index)",
  "web3 0.4.0 (git+https://github.com/Daolab/rust-web3?rev=eda5d97db3133dabba9358fa9d34eef27a0a44c2)",
 ]
 
