@@ -55,17 +55,11 @@ pub fn deploy_example<T: Transport>(conn:  &EthConn<T>) {
 
     // Deploying a contract and register it as a procedure
     let caps: Vec<Cap> = vec![Cap::WriteCap{address: U256::from(0x8000), add_keys: U256::from(1)},Cap::LogCap(vec![])];
-    println!("l1");
     let p1 = deploy_register_procedure_f(conn, &kernel_contract, String::from("testName"), vec![]);
-    println!("l2");
     let p2 = deploy_register_procedure_f(conn, &kernel_contract, String::from("another one"), caps.clone());
-    println!("l3");
     let p3 = deploy_register_procedure_f(conn, &kernel_contract, String::from("member's procedure"), vec![Cap::WriteCap{address: U256::from(0x8000), add_keys: U256::from(1)},Cap::LogCap(vec![U256::from(0x41)]),Cap::CallCap(Vec::new()),Cap::LogCap(vec![U256::from(0x41),U256::from(0x123456)])]);
-    println!("l4");
     let p4 = deploy_register_procedure_f(conn, &kernel_contract, String::from("Bob's procedure"), caps.clone());
-    println!("l5");
     let p5 = deploy_register_procedure_f(conn, &kernel_contract, String::from("Jane's procedure"), caps.clone());
-    println!("l6");
     let ps = vec![p1,p2,p3,p4,p5];
     web3::futures::future::join_all(ps).wait().map_err(|_| String::from("ss")).expect("Procedures deployed successfully");
     kernel_contract.call("setEntryProcedure", (string_to_proc_key(String::from("member's procedure")),), conn.sender, Options::default()).wait().unwrap();
